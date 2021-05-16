@@ -15,7 +15,8 @@ For defining Q-matrix states, we hope to keep the space limited since the number
 
 ## Final Product 
 **MVP**: Given a fixed room and marked out locations for objects “of interest”, the robot can use computer vision to identify types of objects, and move them accordingly. Given a command, it will navigate the “highway” of yellow lines and move that object to the specified bin.
-Solid end result: We can train and execute a q-matrix for rewards, meaning the robot The robot should not pick up any of the dud objects (these will incur a negative reward) and also pick up the optimal number of objects in a quick period of time to maximize its rewards.
+
+**Solid end result**: We can train and execute a q-matrix for rewards, meaning the robot The robot should not pick up any of the dud objects (these will incur a negative reward) and also pick up the optimal number of objects in a quick period of time to maximize its rewards.
 
 **Stretch**: It would be above and beyond if we could give more freedom to the robot to move around without following the yellow lines. This may result in a continuous and more complex state space, but it may also increase the efficiency of the robot since it doesn’t have to follow set paths.
 
