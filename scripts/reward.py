@@ -22,7 +22,7 @@ class Reward(object):
         rospy.init_node('virtual_reset_world_q_learning')
 
         # reward amounts
-        self.dumbell_reward = 100
+        self.dumbbell_reward = 100
         self.ball_reward = 50
         self.negative_reward = -100
 
@@ -54,8 +54,8 @@ class Reward(object):
         reset_world = False
 
         #set reward
-        if obj == 'dumbell':
-            reward_amount = self.dumbell_reward
+        if obj == 'dumbbell':
+            reward_amount = self.dumbbell_reward
             self.non_obstacles_inplace += 1
         
         elif obj == 'ball':
