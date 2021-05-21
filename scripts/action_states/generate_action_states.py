@@ -2,6 +2,8 @@ import numpy as np
 import itertools
 import os
 
+from numpy.lib.function_base import diff
+
 
 # Initialize how many bins, dumbbells, balls, and obstacles there are, and
 #   right now we are assuming that there will be exactly 1 colored object of
@@ -36,7 +38,6 @@ def generate_states(bins: list, dumbbells: list, balls: list, obstacles: list):
     all_lists = []
 
     # Calculate the robot states based on origin + number of bins and append
-    i = 0
     robot_states = [(i + 1) for i in range(len(bins))]
     robot_states.insert(0, 0)
     all_lists.append(robot_states)
@@ -57,7 +58,7 @@ def generate_actions(bins: list, dumbbells: list, balls: list, obstacles: list):
     we always assume that the correct object would move to the correctly-colored bin """
 
     # Note: for column 1, 0 = dumbbell, 1 = ball, 2 = obstacle; for column 2,
-    #   0 = red, 1 = blue; for column 3, 0 = red bin, 1 = blue bin
+    #   1 = red, 2 = blue; for column 3, 1 = red bin, 12= blue bin
 
     # Create a list to save all the actions below for permutation calculation,
     #   this list would contain the types of objects, the colors of the objects,
@@ -74,7 +75,7 @@ def generate_actions(bins: list, dumbbells: list, balls: list, obstacles: list):
     num_of_colors = min(len(bins), len(dumbbells), len(balls), len(obstacles))
 
     # Append the types of object colors for the objects
-    all_lists.append(np.arange(num_of_colors))
+    all_lists.append(np.arange(1, num_of_colors + 1))
 
     # We run a permutations algorithm on all_lists
     temp_actions = list(itertools.product(*all_lists))
@@ -90,10 +91,70 @@ def generate_actions(bins: list, dumbbells: list, balls: list, obstacles: list):
     return actions
 
 
-def generate_action_matrix():
+def is_single_difference(state_1, state_2):
+    """ A helper function to check if there is exactly 1 difference between 2 
+    states, and is used in generate_action_matrix to invalidate state transitions
+    that have more than 1 difference """
+
+    diff_counter = 0
+
+    for i in range(len(state_1)):
+        if state_1[i] != state_2[i]:
+            diff_counter += 1
+
+    return diff_counter == 1
+
+
+def find_state_difference(state_1, state_2):
+    """ A helper function that finds the index of difference between two states,
+    which can be mapped onto the actions matrix; this assumes that there is
+    indeed exactly 1 difference between the two """
+
+    index_tracker = 0
+
+    for i in range(len(state_1)):
+        if state_1[i] != state_2[i]:
+            index_tracker = i
+
+    return index_tracker
+
+
+def generate_action_matrix(states):
     """ This generates the action matrix based on states and actions """
 
-    # TODO
+    action_matrix = []
+
+    for i in range(len(states)):
+
+        action_matrix_row = []
+
+        for j in range(len(states)):
+
+            # You cannot transition between the same state
+            if i == j:
+                action_matrix_row.append(-1)
+
+            # You cannot transition between two states that have more than 
+            #   one difference
+            elif not is_single_difference(states[i], states[j]):
+                action_matrix_row.append(-1)
+
+            # Use actions to find the index to transition the state if there's
+            #   exactly one difference between the two
+            else:
+                state_index = find_state_difference(states[i], states[j])
+
+                # Check if the transition is forward from first state to the second; 
+                #   forward means that you can only move an object from the origin 
+                #   to a bin, but not the reverse
+                if states[i][state_index] < states[j][state_index]:
+                    action_matrix_row.append(state_index - 1)
+                else:
+                    action_matrix_row.append(-1)
+        
+        action_matrix.append(action_matrix_row)
+    
+    return action_matrix
 
 
 def save_data(data, name):
@@ -104,11 +165,15 @@ def save_data(data, name):
 
 if __name__=="__main__":
 
-    # Create and save the states matrix
+    # Create and save the state space
     states = generate_states(BINS, DUMBBELLS, BALLS, OBSTACLES)
     save_data(states, "states.csv")
 
-    # Create and save the action matrix
+    # Create and save the action space
     actions = generate_actions(BINS, DUMBBELLS, BALLS, OBSTACLES)
     save_data(actions, "actions.csv")
+
+    # Create and save the action matrix
+    action_matrix = generate_action_matrix(states)
+    save_data(action_matrix, "action_matrix.csv")
     
