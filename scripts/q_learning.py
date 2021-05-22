@@ -5,7 +5,7 @@ import os
 import numpy as np
 from numpy.random import choice
 
-from q_learning_project.msg import QLearningReward, QMatrix, QMatrixRow, RobotMoveDBToBlock
+from roomba.msg import QLearningReward, QMatrix, QMatrixRow, RobotAction
 
 
 # Path of directory on where this file is located
@@ -25,19 +25,6 @@ def convert_q_matrix_to_list(qmatrix):
     return res
 
 
-def print_state(states):
-    """ Helper function to print states """
-
-    colors = ['red', 'green', 'blue']
-    blocks = states
-    output = ""
-
-    for c, b in zip(colors, blocks):
-        output += f"{c} -> {b} ;"
-
-    print(output)
-
-
 class QLearning(object):
 
 
@@ -51,7 +38,7 @@ class QLearning(object):
 
         # Set up publishers
         self.q_matrix_pub = rospy.Publisher("/q_learning/q_matrix", QMatrix, queue_size = 10)
-        self.robot_action_pub = rospy.Publisher("/q_learning/robot_action", RobotMoveDBToBlock, queue_size = 10)
+        self.robot_action_pub = rospy.Publisher("/q_learning/robot_action", RobotAction, queue_size = 10)
         
         self.cnt = 0
 
@@ -66,27 +53,29 @@ class QLearning(object):
         # to go to the next state.
         #
         # e.g. self.action_matrix[0][12] = 5
-        self.action_matrix = np.loadtxt(path_prefix + "action_matrix.txt")
+        self.action_matrix = np.loadtxt(path_prefix + "action_matrix.csv", delimiter = ',')
 
-        # Fetch actions. These are the only 9 possible actions the system can take.
+        # Fetch actions. These are the only 6 possible actions the system can take.
         # self.actions is an array of dictionaries where the row index corresponds
         # to the action number, and the value has the following form:
-        # { dumbbell: "red", block: 1}
-        colors = ["red", "green", "blue"]
-        self.actions = np.loadtxt(path_prefix + "actions.txt")
+        # { object: "dumbbell", color: "red", block: 1}
+        objects = ["dumbbell", "ball", "obstacle"]
+        colors = ["red", "blue"]
+        self.actions = np.loadtxt(path_prefix + "actions.csv", delimiter = ',')
         self.actions = list(map(
-            lambda x: {"dumbbell": colors[int(x[0])], "block": int(x[1])},
+            lambda x: {"object": objects[int(x[0])], "color": colors[int(x[1] - 1)], "bin": int(x[2] - 1)},
             self.actions
         ))
 
-        # Fetch states. There are 64 states. Each row index corresponds to the
-        # state number, and the value is a list of 3 items indicating the positions
-        # of the red, green, blue dumbbells respectively.
-        # e.g. [[0, 0, 0], [1, 0 , 0], [2, 0, 0], ..., [3, 3, 3]]
-        # e.g. [0, 1, 2] indicates that the green dumbbell is at block 1, and blue at block 2.
-        # A value of 0 corresponds to the origin. 1/2/3 corresponds to the block number.
+        # Fetch states. There are 192 states. Each row index corresponds to the
+        # state number, and the value is a list of 7 items indicating the state of
+        # the robot, the states of the dumbbells, balls, and obstacles respectively
+        # e.g. [[0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], ..., [2, 1, 0, 0, 0, 0, 2]]
+        # e.g. [2, 1, 0, 0, 0, 0, 2] indicates that the robot is at blue bin, red dumbbell
+        # is at red bin, blue obstacle is at blue bin, and the rest are at the origin
+        # A value of 0 corresponds to the origin. 1/2 corresponds to red/blue bins.
         # Note: that not all states are possible to get to.
-        self.states = np.loadtxt(path_prefix + "states.txt")
+        self.states = np.loadtxt(path_prefix + "states.csv", delimiter = ',')
         self.states = list(map(lambda x: list(map(lambda y: int(y), x)), self.states))
 
         # Initialize current state and keep track of the next state
@@ -118,7 +107,7 @@ class QLearning(object):
     def initialize_q_matrix(self):
         """ Initialize the Q-matrix with all 0s to start """
 
-        # Loop over 64 rows and 9 columns to set up the matrix
+        # Loop over 192 rows and 6 columns to set up the matrix
         for i in range(len(self.states)):
             q_matrix_row = QMatrixRow()
             for j in range(len(self.actions)):
@@ -159,15 +148,17 @@ class QLearning(object):
         self.next_state = np.where(actions_in_row == selected_action)[0][0]
 
         # Get the dumbbell color and the block id for the selected action
-        db = self.actions[selected_action]["dumbbell"]
-        block = self.actions[selected_action]["block"]
+        obj = self.actions[selected_action]["object"]
+        clr = self.actions[selected_action]["color"]
+        bin = self.actions[selected_action]["bin"]
 
         # Set up a RobotMoveDBToBlock() msg and publish it
-        robot_action = RobotMoveDBToBlock()
-        robot_action.robot_db = db
-        robot_action.block_id = block
+        robot_action = RobotAction()
+        robot_action.object = obj
+        robot_action.color = clr
+        robot_action.node = bin
         self.robot_action_pub.publish(robot_action)
-        print(print_header + f"[{self.cnt}] published a new action: {db}, {block}" + print_header)
+        print(print_header + f"[{self.cnt}] published a new action: {obj}, {clr}, {bin}" + print_header)
 
 
     def update_q_matrix(self, reward):
@@ -189,9 +180,6 @@ class QLearning(object):
 
         # Now, move the current state on to the next state
         self.curr_state = next_state
-
-        # For testing: print current state
-        print_state(self.states[self.curr_state])
 
         # Check if the change in q-value is static or not and update the tracker
         if abs(old_q_value - new_q_value) <= self.epsilon:
