@@ -87,7 +87,94 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
-    
+    <road name='Motorway 1'>
+      <width>0.5</width>
+      <point>0 0 0.005</point>
+      <point>1.8 1.4 0.005</point>
+      <material>
+        <script>
+          <uri>file://media/materials/scripts/gazebo.material</uri>
+          <name>Gazebo/Yellow</name>
+        </script>
+      </material>
+    </road>
+    <road name='Motorway 2'>
+      <width>0.5</width>
+      <point>0 2.8 0.005</point>
+      <point>1.4 1.4 0.005</point>
+      <material>
+        <script>
+          <uri>file://media/materials/scripts/gazebo.material</uri>
+          <name>Gazebo/Yellow</name>
+        </script>
+      </material>
+    </road>
+    <road name='Motorway 3'>
+      <width>0.5</width>
+      <point>0 2.8 0.005</point>
+      <point>-1.86 -0.743 0.005</point>
+      <material>
+        <script>
+          <uri>file://media/materials/scripts/gazebo.material</uri>
+          <name>Gazebo/Yellow</name>
+        </script>
+      </material>
+    </road>
+    <road name='Motorway 4'>
+      <width>0.5</width>
+      <point>0 0 0.005</point>
+      <point>-1.86 -0.743 0.005</point>
+      <material>
+        <script>
+          <uri>file://media/materials/scripts/gazebo.material</uri>
+          <name>Gazebo/Yellow</name>
+        </script>
+      </material>
+    </road>
+    <road name='Motorway 5'>
+      <width>0.5</width>
+      <point>0 0 0.005</point>
+      <point>-1.4 -1.8 0.005</point>
+      <material>
+        <script>
+          <uri>file://media/materials/scripts/gazebo.material</uri>
+          <name>Gazebo/Yellow</name>
+        </script>
+      </material>
+    </road>
+    <road name='Motorway 6'>
+      <width>0.5</width>
+      <point>0 -2.8 0.005</point>
+      <point>-1.4 -1.8 0.005</point>
+      <material>
+        <script>
+          <uri>file://media/materials/scripts/gazebo.material</uri>
+          <name>Gazebo/Yellow</name>
+        </script>
+      </material>
+    </road>
+    <road name='Motorway 7'>
+      <width>0.5</width>
+      <point>0 -2.8 0.005</point>
+      <point>2 -3.4 0.005</point>
+      <material>
+        <script>
+          <uri>file://media/materials/scripts/gazebo.material</uri>
+          <name>Gazebo/Yellow</name>
+        </script>
+      </material>
+    </road>
+    <road name='Motorway 8'>
+      <width>0.5</width>
+      <point>0 0 0.005</point>
+      <point>2 -3.4 0.005</point>
+      <material>
+        <script>
+          <uri>file://media/materials/scripts/gazebo.material</uri>
+          <name>Gazebo/Yellow</name>
+        </script>
+      </material>
+    </road>
     <model name='robot_dumbbell_red'>
       <pose>1.0635 -0.5 0.1905 1.5708 -0 0</pose>
       <static>0</static>
@@ -185,28 +272,28 @@
       </link>
     </model>
     <state world_name='default'>
-      <sim_time>1273 544000000</sim_time>
-      <real_time>861 368282529</real_time>
-      <wall_time>1621707042 469295057</wall_time>
-      <iterations>860171</iterations>
+      <sim_time>1274 797000000</sim_time>
+      <real_time>0 0</real_time>
+      <wall_time>1621722367 594179409</wall_time>
+      <iterations>0</iterations>
       <model name='bluecube'>
-        <pose>-1.59105 0.556128 0.125 0 -0 0.001127</pose>
+        <pose>-1.73816 -0.627549 0.125 0 -0 0.001127</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>-1.59105 0.556128 0.125 0 -0 0.001127</pose>
+          <pose>-1.73816 -0.627549 0.125 0 -0 0.001127</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>3e-06 -3e-06 0 -2e-06 -2e-06 -0.000136</acceleration>
-          <wrench>0 -0 0 0 -0 0</wrench>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='bluesquare'>
-        <pose>0.504366 -5.32648 0.002936 0 -0 0.01456</pose>
+        <pose>0.148106 -3.59631 0.002936 0 -0 0.01456</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>0.226896 -5.1183 0.002936 0 -0 0.01456</pose>
+          <pose>-0.129364 -3.38813 0.002936 0 -0 0.01456</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-0 0 0 -0 -0 -0</acceleration>
-          <wrench>-0 0 0 0 -0 0</wrench>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='ground_plane'>
@@ -220,101 +307,101 @@
         </link>
       </model>
       <model name='redcube'>
-        <pose>-0.652381 -2.227 0.125 0 -0 -0.000432</pose>
+        <pose>-1.29568 -1.62903 0.125 0 0 -0.000432</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>-0.652381 -2.227 0.125 0 -0 -0.000432</pose>
+          <pose>-1.29568 -1.62903 0.125 0 0 -0.000432</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0.004673 0.004666 -2e-06 -0.03738 0.037413 -0.000181</acceleration>
-          <wrench>0.000234 0.000233 -0 0 -0 0</wrench>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='redsquare'>
-        <pose>0.332565 3.99941 0.002936 0 -0 0.01456</pose>
+        <pose>-0.01755 3.29684 0.002936 0 -0 0.888682</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>0.055095 4.20759 0.002936 0 -0 0.01456</pose>
+          <pose>-0.355264 3.21761 0.002936 0 -0 0.888682</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-0 0 0 -0 -0 -0</acceleration>
-          <wrench>-0 0 0 0 -0 0</wrench>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='robot'>
-        <pose>0.063571 -0.077512 -0.001036 0.000129 0.003405 -0.518104</pose>
+        <pose>0.056352 -0.073125 -0.000861 -0.000944 0.002597 -0.514001</pose>
         <scale>1 1 1</scale>
         <link name='base_footprint'>
-          <pose>0.063571 -0.077512 -0.001036 0.000129 0.003405 -0.518104</pose>
-          <velocity>-0.004258 0.002476 -0.000511 -0.001197 -0.001477 -0.00034</velocity>
-          <acceleration>-8.46188 4.83514 -1.10692 1.42695 -0.358171 -3.1272</acceleration>
-          <wrench>-15.5367 8.87771 -2.0324 0 -0 0</wrench>
+          <pose>0.056352 -0.073125 -0.000861 -0.000944 0.002597 -0.514001</pose>
+          <velocity>-8e-06 1.1e-05 -5e-06 -5e-06 0.000388 0.00011</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='gripper_link'>
-          <pose>0.235128 -0.162851 0.142188 0.000176 0.77211 -0.5204</pose>
-          <velocity>0.053458 -0.030593 0.054189 0.06286 0.112676 0.000891</velocity>
-          <acceleration>106.752 -61.0884 107.646 0.000984 -0.325286 -0.671843</acceleration>
-          <wrench>0.106752 -0.061088 0.107646 0 -0 0</wrench>
+          <pose>0.083568 -0.078496 0.248312 -0.001166 -0.5107 -0.542251</pose>
+          <velocity>-0.000346 0.000314 0.000973 -0.00532 -0.008392 0.000214</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='gripper_link_sub'>
-          <pose>0.223695 -0.182795 0.142185 0.000176 0.77211 -0.5204</pose>
-          <velocity>0.053557 -0.03047 0.054217 0.062867 0.112672 0.000873</velocity>
-          <acceleration>106.954 -60.8664 107.688 0.014612 -0.316928 -0.70686</acceleration>
-          <wrench>0.106954 -0.060866 0.107688 0 -0 0</wrench>
+          <pose>0.071675 -0.098211 0.248335 -0.001166 -0.5107 -0.542251</pose>
+          <velocity>-0.000342 0.000311 0.000978 -0.00532 -0.008392 0.000214</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='link2'>
-          <pose>-0.005589 -0.038105 0.117236 0.000123 0.003409 -0.52052</pose>
-          <velocity>-0.005386 0.003154 -0.00071 0.000196 0.002557 -0.000628</velocity>
-          <acceleration>-10.4485 5.99768 -1.45913 1.54001 -0.625348 1.01596</acceleration>
-          <wrench>-1.02821 0.590212 -0.143588 0 -0 0</wrench>
+          <pose>-0.012989 -0.033846 0.117346 -0.001016 0.002568 -0.542823</pose>
+          <velocity>-0 -1e-06 2.7e-05 -3.3e-05 0.00041 0.000186</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='link3'>
-          <pose>-0.005421 -0.038209 0.175236 0.000164 0.714745 -0.520413</pose>
-          <velocity>-0.005317 0.003121 -0.000655 0.157785 0.278001 -0.000584</velocity>
-          <acceleration>28.4109 -16.2492 -48.9971 0.931634 1.37036 -2.27045</acceleration>
-          <wrench>3.93517 -2.25066 -6.78654 0 -0 0</wrench>
+          <pose>-0.012831 -0.033873 0.175346 -0.001263 -0.636068 -0.54207</pose>
+          <velocity>0.001281 -0.000753 0.000869 -0.002981 -0.00449 0.000206</velocity>
+          <acceleration>0 0 0 -1e-06 1e-06 -1e-06</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='link4'>
-          <pose>0.083083 -0.088956 0.256179 0.000145 0.477582 -0.520457</pose>
-          <velocity>0.017185 -0.009757 -0.033274 -0.432318 -0.746915 0.001091</velocity>
-          <acceleration>96.6679 -55.4901 72.6344 -1.82421 1.51188 0.99047</acceleration>
-          <wrench>12.8323 -7.36609 9.64193 0 -0 0</wrench>
+          <pose>-0.061345 -0.004467 0.292571 -0.001385 0.746233 -0.543761</pose>
+          <velocity>-0.001402 0.000919 -0.001486 -0.003299 -0.005028 0.000211</velocity>
+          <acceleration>0 0 0 -1e-06 1e-06 -1e-06</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='link5'>
-          <pose>0.178627 -0.143719 0.199184 0.000176 0.77211 -0.5204</pose>
-          <velocity>0.059815 -0.034304 0.061763 0.062855 0.112679 0.000903</velocity>
-          <acceleration>106.871 -61.3574 106.224 0.18673 -0.332957 -0.664598</acceleration>
-          <wrench>0.213743 -0.122715 0.212449 0 -0 0</wrench>
+          <pose>0.016571 -0.051571 0.20839 -0.001166 -0.5107 -0.542251</pose>
+          <velocity>0.001104 -0.00068 -0.001881 -0.00532 -0.008392 0.000214</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='wheel_left_link'>
-          <pose>0.13498 0.04753 0.031986 -1.49431 1.55763 -0.44163</pose>
-          <velocity>-0.004343 0.002299 -7.2e-05 -0.006367 0.000554 -0.000286</velocity>
-          <acceleration>-8.64655 4.50059 -0.140463 -0.169673 0.355666 -2.94401</acceleration>
-          <wrench>-0.246417 0.128262 -0.004003 0 -0 0</wrench>
+          <pose>0.127238 0.052247 0.03197 -1.64727 1.56068 -0.590474</pose>
+          <velocity>7e-06 1e-05 6e-06 0.000513 0.001336 0.000115</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='wheel_right_link'>
-          <pose>-0.00765 -0.202677 0.031959 1.55466 1.53729 2.60737</pose>
-          <velocity>-0.004345 0.002523 0.000167 0.000454 -0.001337 -0.000209</velocity>
-          <acceleration>-8.45392 4.83372 0.330986 -0.484262 -0.112896 -2.72546</acceleration>
-          <wrench>-0.240927 0.137756 0.009433 0 -0 0</wrench>
+          <pose>-0.014354 -0.198529 0.032306 1.55117 1.5408 2.60796</pose>
+          <velocity>3.8e-05 -3e-06 -8e-06 -0.00098 -0.000745 0.000125</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='robot_dumbbell_blue'>
-        <pose>1.27746 -3.48785 0.190499 1.5708 1e-05 -0.001204</pose>
+        <pose>1.86312 -3.27598 0.190499 1.5708 8e-06 -0.001252</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>1.27746 -3.48785 0.190499 1.5708 1e-05 -0.001204</pose>
+          <pose>1.86312 -3.27598 0.190499 1.5708 8e-06 -0.001252</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>1.6494 -1.59713 -3.14784 -1.11607 1.42343 -3.07954</acceleration>
-          <wrench>0.08247 -0.079857 -0.157392 0 -0 0</wrench>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='robot_dumbbell_red'>
-        <pose>1.10228 1.77722 0.190501 1.5708 7e-06 -0.002989</pose>
+        <pose>1.49788 1.25575 0.1905 1.57079 -5e-06 -0.003016</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>1.10228 1.77722 0.190501 1.5708 7e-06 -0.002989</pose>
+          <pose>1.49788 1.25575 0.1905 1.57079 -5e-06 -0.003016</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>-3.14627 3.05659 2.93847 -0.338338 0.161854 3.14015</acceleration>
-          <wrench>-0.157314 0.15283 0.146924 0 -0 0</wrench>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <light name='sun'>
@@ -323,7 +410,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-3.85784 -1.99422 10.8556 0 1.13645 0.265192</pose>
+        <pose>-2.95432 -2.15346 6.89608 0 1.24045 0.101192</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
