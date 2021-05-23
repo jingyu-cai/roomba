@@ -5,7 +5,7 @@ import rospy
 
 from gazebo_msgs.msg import ModelState, ModelStates
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
-from q_learning_project.msg import QLearningReward
+from roomba.msg import QLearningReward
 from roomba.msg import RobotAction
 import numpy as np
 
