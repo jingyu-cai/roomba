@@ -52,13 +52,13 @@ class QLearning(object):
         # from the starting state. Values 0-9 correspond to what action is needed
         # to go to the next state.
         #
-        # e.g. self.action_matrix[0][12] = 5
+        # e.g. self.action_matrix[0][1] = 5
         self.action_matrix = np.loadtxt(path_prefix + "action_matrix.csv", delimiter = ',')
 
         # Fetch actions. These are the only 6 possible actions the system can take.
         # self.actions is an array of dictionaries where the row index corresponds
         # to the action number, and the value has the following form:
-        # { object: "dumbbell", color: "red", block: 1}
+        # { object: "dumbbell", color: "red", bin: 1}
         objects = ["dumbbell", "obstacle"]
         colors = ["red", "blue"]
         self.actions = np.loadtxt(path_prefix + "actions.csv", delimiter = ',')
@@ -147,12 +147,12 @@ class QLearning(object):
         self.curr_action = selected_action
         self.next_state = np.where(actions_in_row == selected_action)[0][0]
 
-        # Get the dumbbell color and the block id for the selected action
+        # Get the object, color and the bin for the selected action
         obj = self.actions[selected_action]["object"]
         clr = self.actions[selected_action]["color"]
         bin = self.actions[selected_action]["bin"]
 
-        # Set up a RobotMoveDBToBlock() msg and publish it
+        # Set up a RobotAction() msg and publish it
         robot_action = RobotAction()
         robot_action.object = obj
         robot_action.color = clr
