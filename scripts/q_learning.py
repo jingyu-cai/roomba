@@ -37,13 +37,13 @@ class QLearning(object):
         rospy.init_node("q_learning")
 
         # Set up publishers
-        self.q_matrix_pub = rospy.Publisher("/q_learning/q_matrix", QMatrix, queue_size = 10)
-        self.robot_action_pub = rospy.Publisher("/q_learning/robot_action", RobotAction, queue_size = 10)
+        self.q_matrix_pub = rospy.Publisher("/roomba/q_matrix", QMatrix, queue_size = 10)
+        self.robot_action_pub = rospy.Publisher("/roomba/robot_action", RobotAction, queue_size = 10)
         
         self.cnt = 0
 
         # Set up subscriber
-        rospy.Subscriber("/q_learning/reward", QLearningReward, self.reward_received)
+        rospy.Subscriber("/roomba/reward", QLearningReward, self.reward_received)
 
         # Fetch pre-built action matrix. This is a 2d numpy array where row indexes
         # correspond to the starting state and column indexes are the next states.
@@ -59,7 +59,7 @@ class QLearning(object):
         # self.actions is an array of dictionaries where the row index corresponds
         # to the action number, and the value has the following form:
         # { object: "dumbbell", color: "red", block: 1}
-        objects = ["dumbbell", "ball", "obstacle"]
+        objects = ["dumbbell", "obstacle"]
         colors = ["red", "blue"]
         self.actions = np.loadtxt(path_prefix + "actions.csv", delimiter = ',')
         self.actions = list(map(
