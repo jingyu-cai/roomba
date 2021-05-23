@@ -3,6 +3,7 @@
 import rospy
 import os
 
+
 from gazebo_msgs.msg import ModelState, ModelStates
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 from roomba.msg import QLearningReward
@@ -15,8 +16,6 @@ from random import shuffle
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
 path_prefix = os.path.dirname(__file__) + "/distances/"
-
-
 class Reward(object):
 
     def __init__(self):
@@ -33,6 +32,7 @@ class Reward(object):
 
         #this will change with the map
         self.num_nonobstacles = 2
+        self.robot_location = 4
 
         #need to change this based on graph
         self.bin_nodes = {'red' : 6, 'blue' : 0, 'green' : -1}
@@ -74,7 +74,8 @@ class Reward(object):
             raise Exception("Wrong object type")
 
         #adjust with respect to distance
-        reward_amount -= self.distance[node, self.bin_nodes[color]]
+        reward_amount -= self.distance[node, self.bin_nodes[color]] + self.distance[node, self.robot_location]
+        self.robot_location = self.bin_nodes[color]
 
         
         if self.non_obstacles_inplace == self.num_nonobstacles:
@@ -87,6 +88,7 @@ class Reward(object):
         reward_msg.reward = reward_amount
         reward_msg.iteration_num = self.iteration_num
         reward_msg.reset_world = reset_world
+        reward_msg.robot_location = self.robot_location
         self.reward_pub.publish(reward_msg)
         print("Published reward: ", reward_amount)
 
