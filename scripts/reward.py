@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
-
+import os
 
 from gazebo_msgs.msg import ModelState, ModelStates
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
@@ -35,7 +35,7 @@ class Reward(object):
         #need to change this based on graph
         self.bin_nodes = {'red' : 6, 'blue' : 0, 'green' : -1}
 
-        self.distance = np.load('./distances.npy')
+        self.distance = np.load(os.path.dirname(__file__) + "/distances.npy")
 
 
         # keep track of the iteration number
