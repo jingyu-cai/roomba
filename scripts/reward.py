@@ -7,6 +7,7 @@ from gazebo_msgs.msg import ModelState, ModelStates
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 from q_learning_project.msg import QLearningReward
 from roomba.msg import RobotAction
+import numpy as np
 
 from std_msgs.msg import Header
 
@@ -27,10 +28,12 @@ class Reward(object):
         self.negative_reward = -100
 
         self.non_obstacles_inplace = 0
-        self.num_nonobstacles = 4
+
+        #this will change with the map
+        self.num_nonobstacles = 2
 
         #need to change this based on graph
-        self.bin_nodes = {'red' : -1, 'blue' : -1, 'green' : -1}
+        self.bin_nodes = {'red' : 6, 'blue' : 0, 'green' : -1}
 
         self.distance = np.load('./distances.npy')
 
@@ -72,7 +75,7 @@ class Reward(object):
         reward_amount -= self.distance[node, self.bin_nodes[color]]
 
         
-        if self.non_obstacles_inplace == self.num_nonobstacles
+        if self.non_obstacles_inplace == self.num_nonobstacles:
             reset_world = True
 
 
