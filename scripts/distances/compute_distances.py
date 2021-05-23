@@ -23,7 +23,7 @@ def floyd_warshall(n, weight_mat):
 
 
 if __name__=="__main__":
-    weight_mat = np.genfromtxt('../map1_matrix.csv', delimiter=',')
+    weight_mat = np.genfromtxt('./map1_matrix.csv', delimiter=',')
     for i in range(weight_mat.shape[0]):
         for j in range(weight_mat.shape[1]):
             if weight_mat[i,j] == 0:

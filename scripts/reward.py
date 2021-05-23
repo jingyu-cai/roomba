@@ -14,6 +14,8 @@ from std_msgs.msg import Header
 from random import shuffle
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
+path_prefix = os.path.dirname(__file__) + "/distances/"
+
 
 class Reward(object):
 
@@ -35,7 +37,7 @@ class Reward(object):
         #need to change this based on graph
         self.bin_nodes = {'red' : 6, 'blue' : 0, 'green' : -1}
 
-        self.distance = np.load(os.path.dirname(__file__) + "/distances.npy")
+        self.distance = np.load(path_prefix + "distances.npy")
 
 
         # keep track of the iteration number
