@@ -63,7 +63,7 @@ class QLearning(object):
         colors = ["red", "blue"]
         self.actions = np.loadtxt(path_prefix + "actions.csv", delimiter = ',')
         self.actions = list(map(
-            lambda x: {"object": objects[int(x[0])], "color": colors[int(x[1] - 1)], "bin": int(x[2] - 1)},
+            lambda x: {"object": objects[int(x[0])], "color": colors[int(x[1] - 1)], "node": int(x[2])},
             self.actions
         ))
 
@@ -79,7 +79,9 @@ class QLearning(object):
         self.states = list(map(lambda x: list(map(lambda y: int(y), x)), self.states))
 
         # Initialize current state and keep track of the next state
-        self.curr_state = 0
+        # Note: state 64 is where the robot is at starting position + all objects
+        #   are at their starting positions (need to change it based on graph)
+        self.curr_state = 64
         self.next_state = 0
 
         # Initialize current action index
@@ -150,15 +152,15 @@ class QLearning(object):
         # Get the object, color and the bin for the selected action
         obj = self.actions[selected_action]["object"]
         clr = self.actions[selected_action]["color"]
-        bin = self.actions[selected_action]["bin"]
+        node = self.actions[selected_action]["node"]
 
         # Set up a RobotAction() msg and publish it
         robot_action = RobotAction()
         robot_action.object = obj
         robot_action.color = clr
-        robot_action.node = bin
+        robot_action.node = node
         self.robot_action_pub.publish(robot_action)
-        print(print_header + f"[{self.cnt}] published a new action: {obj}, {clr}, {bin}" + print_header)
+        print(print_header + f"[{self.cnt}] published a new action: {obj}, {clr}, {node}" + print_header)
 
 
     def update_q_matrix(self, reward):
@@ -228,6 +230,9 @@ class QLearning(object):
         else:
             # If not, we continue to make random actions
             self.select_random_action()
+
+            if data.reset_world:
+                self.curr_state = 64
 
 
     def run(self):
