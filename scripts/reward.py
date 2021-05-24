@@ -95,7 +95,7 @@ class Reward(object):
         # increment iteration if world needs to be reset
         #reset obj positions 
         if reset_world:
-            print("reseting the world")
+            print("resetting the world")
             self.iteration_num += 1
             self.non_obstacles_inplace = 0
 
