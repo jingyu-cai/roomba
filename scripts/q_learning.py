@@ -59,7 +59,7 @@ class QLearning(object):
         # self.actions is an array of dictionaries where the row index corresponds
         # to the action number, and the value has the following form:
         # { object: "dumbbell", color: "red", bin: 1}
-        objects = ["dumbbell", "obstacle"]
+        objects = ["dumbbell", "ball", "obstacle"]
         colors = ["red", "blue"]
         self.actions = np.loadtxt(path_prefix + "actions.csv", delimiter = ',')
         self.actions = list(map(

@@ -12,7 +12,7 @@ from numpy.lib.function_base import diff
 #   1 red ball and 1 blue ball
 NODES = [0, 1, 2, 3, 4, 5, 6]
 DUMBBELLS = [1, 1]
-# BALLS = [1, 1]
+BALLS = [1, 1]
 OBSTACLES = [1, 1]
 
 # TODO (optional): Is there a way to distinguish, for ex, 2 red dumbbells? 
@@ -27,7 +27,7 @@ def append_object_states(all_lists, objects):
             all_lists.append([0, i + 1])
 
 
-def generate_states(nodes: list, dumbbells: list, obstacles: list):
+def generate_states(nodes: list, dumbbells: list, balls: list, obstacles: list):
     """ This generates a matrix of states based on the distribution of objects """
 
     # Note: 0 = starting point/origin, 1 = red bin, 2 = blue bin
@@ -42,6 +42,7 @@ def generate_states(nodes: list, dumbbells: list, obstacles: list):
 
     # Calculate the dumbbell, ball, and obstacle states and append
     append_object_states(all_lists, dumbbells)
+    append_object_states(all_lists, balls)
     append_object_states(all_lists, obstacles)
 
     # Finally, we run a permutations algorithm on all_lists
@@ -50,7 +51,7 @@ def generate_states(nodes: list, dumbbells: list, obstacles: list):
     return states
 
 
-def generate_actions(dumbbells: list, obstacles: list):
+def generate_actions(dumbbells: list, balls: list, obstacles: list):
     """ This generates a matrix of actions based on the distribution of objects, and
     we always assume that the correct object would move to the correctly-colored bin """
 
@@ -63,13 +64,13 @@ def generate_actions(dumbbells: list, obstacles: list):
     all_lists = []
 
     # Append the types of objects, which are pre-determined
-    all_lists.append([0, 1])
+    all_lists.append([0, 1, 2])
 
     # Find the minimum number of colors between dumbbells, balls, and obstacles
     #   to ensure that we won't have an addition color that cannot be sorted
     #   (we can assume this since the colors will always be created in a red ->
     #   blue -> sth else order)
-    num_of_colors = min(len(dumbbells), len(obstacles))
+    num_of_colors = min(len(dumbbells), len(balls), len(obstacles))
 
     # Append the types of object colors for the objects
     all_lists.append(np.arange(1, num_of_colors + 1))
@@ -171,11 +172,11 @@ def save_data(data, name):
 if __name__=="__main__":
 
     # Create and save the state space
-    states = generate_states(NODES, DUMBBELLS, OBSTACLES)
+    states = generate_states(NODES, DUMBBELLS, BALLS, OBSTACLES)
     save_data(states, "states.csv")
 
     # Create and save the action space
-    actions = generate_actions(DUMBBELLS, OBSTACLES)
+    actions = generate_actions(DUMBBELLS, BALLS, OBSTACLES)
     save_data(actions, "actions.csv")
 
     # Create and save the action matrix
