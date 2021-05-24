@@ -54,7 +54,7 @@ def generate_action_matrix(states):
                 nextstate[0] = bins[color]
                 state_index = states.index(nextstate)  
                 if i != state_index:
-                    action_matrix[i, state_index] = index
+                    action_matrix[i, state_index] = index -1 
     return action_matrix
 
 def save_data(data, name):
