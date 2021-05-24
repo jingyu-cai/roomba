@@ -102,7 +102,7 @@ class QLearning(object):
         # Initialize variables to define static status and keep track of how many 
         #   iterations have the Q-matrix remained static
         self.epsilon = 3
-        self.static_iter_threshold = 100
+        self.static_iter_threshold = 40
         self.static_tracker = 0
 
         # Initialize and publish Q-matrix

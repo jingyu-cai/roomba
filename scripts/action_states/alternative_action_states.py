@@ -5,7 +5,7 @@ import csv
 
 from numpy.lib.function_base import diff
 
-num_nodes = 7
+num_nodes = 9
 
 bins = {}
 objects = []
