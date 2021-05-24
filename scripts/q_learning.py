@@ -24,6 +24,20 @@ def convert_q_matrix_to_list(qmatrix):
 
     return res
 
+def print_state(state, actions):
+    """ Helper function to print a state """
+
+    output = ""
+
+    output += "robot: at node " + str(state[0]) + "; "
+
+    is_at_origin = lambda n: "at origin" if n == 0 else "at bin"
+
+    for i in range(len(actions)):
+        output += actions[i]["color"] + " " + actions[i]["object"] + ": " + is_at_origin(state[i + 1]) + "; "
+
+    print(output)
+
 
 class QLearning(object):
 
@@ -87,8 +101,8 @@ class QLearning(object):
 
         # Initialize variables to define static status and keep track of how many 
         #   iterations have the Q-matrix remained static
-        self.epsilon = 1
-        self.static_iter_threshold = 500
+        self.epsilon = 3
+        self.static_iter_threshold = 100
         self.static_tracker = 0
 
         # Initialize and publish Q-matrix
@@ -180,6 +194,9 @@ class QLearning(object):
 
         # Now, move the current state on to the next state
         self.curr_state = next_state
+
+        # For testing: print current state
+        print_state(self.states[self.curr_state], self.actions)
 
         # Check if the change in q-value is static or not and update the tracker
         if abs(old_q_value - new_q_value) <= self.epsilon:
