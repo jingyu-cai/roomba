@@ -35,7 +35,7 @@ class Reward(object):
         self.robot_location = 4
 
         #need to change this based on graph
-        self.bin_nodes = {'red' : 6, 'blue' : 0, 'green' : -1}
+        self.bin_nodes = {'red' : 0, 'blue' : 6, 'green' : -1}
 
         self.distance = np.load(path_prefix + "distances.npy")
 
