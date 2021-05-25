@@ -11,6 +11,7 @@ from roomba.msg import QLearningReward, QMatrix, QMatrixRow, RobotAction
 # Path of directory on where this file is located
 path_prefix = os.path.dirname(__file__) + "/action_states/"
 
+# Header for formatting output
 print_header = "=" * 10
 
 
@@ -24,11 +25,11 @@ def convert_q_matrix_to_list(qmatrix):
 
     return res
 
+
 def print_state(state, actions):
     """ Helper function to print a state """
 
     output = ""
-
     output += "robot: at node " + str(state[0]) + "; "
 
     is_at_origin = lambda n: "at origin" if n == 0 else "at bin"
@@ -54,6 +55,7 @@ class QLearning(object):
         self.q_matrix_pub = rospy.Publisher("/roomba/q_matrix", QMatrix, queue_size = 10)
         self.robot_action_pub = rospy.Publisher("/roomba/robot_action", RobotAction, queue_size = 10)
         
+        # A counter to keep track of how many iterations have passed
         self.cnt = 0
 
         # Set up subscriber
@@ -63,7 +65,7 @@ class QLearning(object):
         # correspond to the starting state and column indexes are the next states.
         #
         # A value of -1 indicates that it is not possible to get to the next state
-        # from the starting state. Values 0-9 correspond to what action is needed
+        # from the starting state. Values 0-5 correspond to what action is needed
         # to go to the next state.
         #
         # e.g. self.action_matrix[0][1] = 5
@@ -72,28 +74,29 @@ class QLearning(object):
         # Fetch actions. These are the only 6 possible actions the system can take.
         # self.actions is an array of dictionaries where the row index corresponds
         # to the action number, and the value has the following form:
-        # { object: "dumbbell", color: "red", bin: 1}
+        # { object: "dumbbell", color: "red", node: 1}
         self.actions = np.genfromtxt(path_prefix + "objects.csv", dtype = 'str', delimiter = ',')
         self.actions = list(map(
             lambda x: {"object": str(x[0]), "color": str(x[1]), "node": int(x[2])},
             self.actions
         ))
 
-        # Fetch states. There are 192 states. Each row index corresponds to the
+        # Fetch states. There are 576 states. Each row index corresponds to the
         # state number, and the value is a list of 7 items indicating the state of
-        # the robot, the states of the dumbbells, balls, and obstacles respectively
-        # e.g. [[0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], ..., [2, 1, 0, 0, 0, 0, 2]]
-        # e.g. [2, 1, 0, 0, 0, 0, 2] indicates that the robot is at blue bin, red dumbbell
-        # is at red bin, blue obstacle is at blue bin, and the rest are at the origin
-        # A value of 0 corresponds to the origin. 1/2 corresponds to red/blue bins.
+        # the robot, the states of the objects in the order defined in objects.csv
+        # e.g. [[0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], ..., [2, 1, 0, 0, 0, 0, 1]]
+        # e.g. [2, 1, 0, 0, 0, 0, 1] indicates that the robot is at node 2, red dumbbell
+        # is at red bin, blue ball is at blue bin, and the rest are at the origin
+        # A value of 0 corresponds to at the origin. 1 corresponds to at red/blue bins 
+        # based on the color of the object
         # Note: that not all states are possible to get to.
         self.states = np.loadtxt(path_prefix + "states.csv", delimiter = ',')
         self.states = list(map(lambda x: list(map(lambda y: int(y), x)), self.states))
 
         # Initialize current state and keep track of the next state
-        # Note: state 64 is where the robot is at starting position + all objects
+        # Note: state 256 is where the robot is at starting position + all objects
         #   are at their starting positions (need to change it based on graph)
-        self.curr_state = 64
+        self.curr_state = 256
         self.next_state = 0
 
         # Initialize current action index
@@ -121,7 +124,7 @@ class QLearning(object):
     def initialize_q_matrix(self):
         """ Initialize the Q-matrix with all 0s to start """
 
-        # Loop over 192 rows and 6 columns to set up the matrix
+        # Loop over 576 rows and 6 columns to set up the matrix
         for i in range(len(self.states)):
             q_matrix_row = QMatrixRow()
             for j in range(len(self.actions)):
@@ -147,21 +150,21 @@ class QLearning(object):
         # Filter out the invalid actions from the row of actions
         filtered_actions_in_row = list(filter(lambda x: x != -1, actions_in_row))
 
-        # If there are no possible actions to take: reset current state to state 0
+        # If there are no possible actions to take: reset current state to state 256
         while len(filtered_actions_in_row) == 0:
             print(print_header + "no action to take" + print_header)
-            self.curr_state = 0
+            self.curr_state = 256
             curr_state = self.curr_state
             actions_in_row = self.action_matrix[curr_state]
             filtered_actions_in_row = list(filter(lambda x: x != -1, actions_in_row))
             
-        # Randomly select an action from the row, assign that action to self.action
+        # Randomly select an action from the row, assign that action to self.curr_action
         #   and find its index in the row to assign it to self.next_state
         selected_action = int(choice(filtered_actions_in_row))
         self.curr_action = selected_action
         self.next_state = np.where(actions_in_row == selected_action)[0][0]
 
-        # Get the object, color and the bin for the selected action
+        # Get the object, color and the node for the selected action
         obj = self.actions[selected_action]["object"]
         clr = self.actions[selected_action]["color"]
         node = self.actions[selected_action]["node"]
@@ -172,6 +175,8 @@ class QLearning(object):
         robot_action.color = clr
         robot_action.node = node
         self.robot_action_pub.publish(robot_action)
+
+        # For testing: print published action
         print(print_header + f"[{self.cnt}] published a new action: {obj}, {clr}, {node}" + print_header)
 
 
@@ -246,8 +251,9 @@ class QLearning(object):
             # If not, we continue to make random actions
             self.select_random_action()
 
+            # Set self.curr_state back to 256 if the world is reset
             if data.reset_world:
-                self.curr_state = 64
+                self.curr_state = 256
 
 
     def run(self):
