@@ -30,6 +30,7 @@
 
   <!-- run controllers -->
   <include file="$(find turtlebot3_manipulation_gazebo)/launch/turtlebot3_manipulation_controller.launch"/>
+  <include file="$(find turtlebot3_manipulation_moveit_config)/launch/move_group.launch" />
 
   <!-- Run a transformation between the robot and its laser -->
   <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="-0.1524 0.0 0.1016 0 0 0 /base_footprint /base_scan 100" />
