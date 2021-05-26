@@ -7,12 +7,14 @@ from numpy.lib.function_base import diff
 
 num_nodes = 9
 
-bins = {}
-objects = []
+
 object_to_index = {}
 
 
 def read_objects_and_bins():
+    bins = {}
+    objects = []
+
     with open('objects.csv', newline='') as f:
         reader = csv.reader(f)
         data = list(reader)
@@ -26,8 +28,10 @@ def read_objects_and_bins():
     for x in data:
         bins[x[0]] = int(x[1])
 
+    return objects, bins
 
-def generate_states():
+
+def generate_states(objects):
     ls_nodes = list(range(num_nodes))
     ls_complete = [ls_nodes]
 
@@ -40,7 +44,7 @@ def generate_states():
     return states
 
     
-def generate_action_matrix(states):
+def generate_action_matrix(states, objects, bins):
     n = len(states)
     action_matrix = np.ones((n,n), dtype=int) * (-1)
     
@@ -66,10 +70,10 @@ def save_data(data, name):
 
 
 if __name__=="__main__":
-    read_objects_and_bins()
+    objects, bins = read_objects_and_bins()
 
-    states = generate_states()
+    states = generate_states(objects)
     save_data(states, 'states.csv')
 
-    action_matrix = generate_action_matrix(states)
+    action_matrix = generate_action_matrix(states, objects, bins)
     save_data(action_matrix, "action_matrix.csv")
