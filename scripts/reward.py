@@ -16,7 +16,8 @@ from std_msgs.msg import Header
 from random import shuffle
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
-path_prefix = os.path.dirname(__file__) + "/distances/"
+path_prefix = os.path.dirname(__file__)
+
 class Reward(object):
 
     def __init__(self):
@@ -25,7 +26,7 @@ class Reward(object):
         rospy.init_node('virtual_reset_world_q_learning')
 
 
-        objects, bins = read_objects_and_bins()
+        objects, bins = read_objects_and_bins(path_prefix + '/action_states/')
 
         #this will change with the map
         self.num_nonobstacles = 0
@@ -39,7 +40,9 @@ class Reward(object):
                 self.num_nonobstacles += 1
 
         for b in bins:
-            self.bin_nodes[b[0]] = b[1]
+            self.bin_nodes[str(b)] = bins[str(b)]
+
+        print(self.num_nonobstacles, self.bin_nodes)
 
         # reward amounts
         self.dumbbell_reward = 100
@@ -49,7 +52,7 @@ class Reward(object):
         self.non_obstacles_inplace = 0
 
 
-        self.distance = np.load(path_prefix + "distances.npy")
+        self.distance = np.load(path_prefix + "/distances/" + "distances.npy")
 
 
         # keep track of the iteration number

@@ -10,18 +10,20 @@ num_nodes = 9
 
 object_to_index = {}
 
+path_prefix = os.path.dirname(__file__)
 
-def read_objects_and_bins():
+
+def read_objects_and_bins(path):
     bins = {}
     objects = []
 
-    with open('objects.csv', newline='') as f:
+    with open(path + 'objects.csv', newline='') as f:
         reader = csv.reader(f)
         data = list(reader)
     for x in data:
         objects.append(x)
     
-    with open('bins.csv', newline='') as f:
+    with open(path + 'bins.csv', newline='') as f:
         reader = csv.reader(f)
         data = list(reader)
     
@@ -70,7 +72,7 @@ def save_data(data, name):
 
 
 if __name__=="__main__":
-    objects, bins = read_objects_and_bins()
+    objects, bins = read_objects_and_bins(path_prefix)
 
     states = generate_states(objects)
     save_data(states, 'states.csv')
