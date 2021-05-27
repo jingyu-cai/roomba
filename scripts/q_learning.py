@@ -156,7 +156,7 @@ class QLearning(object):
         # If there are no possible actions to take: reset current state to state 256
         while len(filtered_actions_in_row) == 0:
             print(print_header + "no action to take" + print_header)
-            self.curr_state = 256
+            self.curr_state = self.origin_state
             curr_state = self.curr_state
             actions_in_row = self.action_matrix[curr_state]
             filtered_actions_in_row = list(filter(lambda x: x != -1, actions_in_row))

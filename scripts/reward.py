@@ -42,8 +42,6 @@ class Reward(object):
         for b in bins:
             self.bin_nodes[str(b)] = bins[str(b)]
 
-        print(self.num_nonobstacles, self.bin_nodes)
-
         # reward amounts
         self.dumbbell_reward = 100
         self.ball_reward = 50

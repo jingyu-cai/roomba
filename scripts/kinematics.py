@@ -55,7 +55,11 @@ class RobotMovement(object):
         # set up graph-related variables
         self.origin_state = 256
         self.origin_node = 4
-        self.num_nonobstacles = 4
+        self.num_nonobstacles = 0
+
+        for obj in objects:
+            if obj[0] != "obstacle":
+                self.num_nonobstacles += 1
 
         # Set up a list to store the trained Q-matrix
         self.q_matrix = []
