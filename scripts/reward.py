@@ -9,6 +9,7 @@ from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 from roomba.msg import QLearningReward
 from roomba.msg import RobotAction
 import numpy as np
+from action_states.alternative_action_states import read_objects_and_bins
 
 from std_msgs.msg import Header
 
@@ -23,6 +24,23 @@ class Reward(object):
         # initialize this node
         rospy.init_node('virtual_reset_world_q_learning')
 
+
+        objects, bins = read_objects_and_bins()
+
+        #this will change with the map
+        self.num_nonobstacles = 0
+        self.robot_location = 4
+
+        #this is set later
+        self.bin_nodes = {'red' : -1, 'blue' : -1, 'green' : -1}
+
+        for obj in objects:
+            if obj[0] != 'obstacle':
+                self.num_nonobstacles += 1
+
+        for b in bins:
+            self.bin_nodes[b[0]] = b[1]
+
         # reward amounts
         self.dumbbell_reward = 100
         self.ball_reward = 50
@@ -30,12 +48,6 @@ class Reward(object):
 
         self.non_obstacles_inplace = 0
 
-        #this will change with the map
-        self.num_nonobstacles = 2
-        self.robot_location = 4
-
-        #need to change this based on graph
-        self.bin_nodes = {'red' : 6, 'blue' : 0, 'green' : -1}
 
         self.distance = np.load(path_prefix + "distances.npy")
 
