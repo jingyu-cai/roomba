@@ -55,8 +55,8 @@ class RobotMovement(object):
         # set up graph-related variables
         self.origin_state = 256
         self.origin_node = 4
-        self.num_nonobstacles = 0
 
+        self.num_nonobstacles = 0
         for obj in objects:
             if obj[0] != "obstacle":
                 self.num_nonobstacles += 1
@@ -68,12 +68,10 @@ class RobotMovement(object):
         # Get the array of shortest paths from node to node
         weight_mat = np.genfromtxt(path_prefix + "/distances/" + "map1_matrix.csv", delimiter=',')
         n = weight_mat.shape[0]
-
         for i in range(weight_mat.shape[0]):
             for j in range(weight_mat.shape[1]):
                 if weight_mat[i,j] == 0:
                     weight_mat[i,j] = 1e9
-
         distance, self.shortest_paths = floyd_warshall(n, weight_mat)
 
         # set up action sequence
