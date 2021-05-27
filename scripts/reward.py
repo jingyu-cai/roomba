@@ -9,7 +9,7 @@ from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 from roomba.msg import QLearningReward
 from roomba.msg import RobotAction
 import numpy as np
-from action_states.alternative_action_states import read_objects_and_bins
+from action_states.generate_action_states import read_objects_and_bins
 
 from std_msgs.msg import Header
 
