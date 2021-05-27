@@ -47,7 +47,6 @@ def floyd_warshall(n, weight_mat):
     for i in range(n):
         for j in range(n):
             path = find_shortest_path(i,j)
-            print(path)
             paths[i][j] = path
 
     return distance, paths

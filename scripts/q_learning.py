@@ -93,10 +93,13 @@ class QLearning(object):
         self.states = np.loadtxt(path_prefix + "states.csv", delimiter = ',')
         self.states = list(map(lambda x: list(map(lambda y: int(y), x)), self.states))
 
-        # Initialize current state and keep track of the next state
+        # Set the origin state, where the robot first starts (changes with graph)
         # Note: state 256 is where the robot is at starting position + all objects
         #   are at their starting positions (need to change it based on graph)
-        self.curr_state = 256
+        self.origin_state = 256
+
+        # Initialize current state and keep track of the next state
+        self.curr_state = self.origin_state
         self.next_state = 0
 
         # Initialize current action index
@@ -251,9 +254,9 @@ class QLearning(object):
             # If not, we continue to make random actions
             self.select_random_action()
 
-            # Set self.curr_state back to 256 if the world is reset
+            # Set self.curr_state back to self.origin_state if the world is reset
             if data.reset_world:
-                self.curr_state = 256
+                self.curr_state = self.origin_state
 
 
     def run(self):
