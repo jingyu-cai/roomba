@@ -7,7 +7,7 @@ import time
 import os
 
 import moveit_commander
-from geometry_msgs.msg import Twist, Vector3
+from geometry_msgs.msg import Twist, Vector3, Pose
 from sensor_msgs.msg import Image, LaserScan
 from nav_msgs.msg import Odometry
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
@@ -108,6 +108,11 @@ class RobotMovement(object):
         self.q_matrix = []
         self.load_q_matrix()
 
+        self.locations = []
+        self.load_locations()
+
+        self.curr_pose = Pose()
+
         # Get the array of shortest paths from node to node
         weight_mat = np.genfromtxt(path_prefix + "/distances/" + "map1_matrix.csv", delimiter=',')
         n = weight_mat.shape[0]
@@ -124,6 +129,10 @@ class RobotMovement(object):
         # set up the node sequence
         self.node_sequence = []
         self.get_node_sequence()
+
+    def load_locations(self):
+        """ Loads locations of each node"""
+        self.locations = np.loadtxt(path_prefix + "/locations.csv", delimiter = ',')
 
     def load_q_matrix(self):
         """ Load the trained Q-matrix csv file """
@@ -186,12 +195,23 @@ class RobotMovement(object):
         print(self.node_sequence)
 
     def odom_callback(self, data):
-        """ Processes the odometry data """
-
+        """ Saves the odometry data """
+        self.curr_pose = data.pose.pose
+        '''
         kp = 0.5
         target_angle = get_target_angle(data.pose.pose.position, (1.4, 1.4))
         self.twist.linear.x = 0
         self.twist.angular.z = kp * (target_angle - get_yaw_from_pose(data.pose.pose))
+        self.cmd_vel_pub.publish(self.twist)
+        '''
+
+    def orient(self, p):
+        """ given a node number, orients robot to face that node"""
+        kp = 0.5
+        point = self.locations[p]
+        target_angle = get_target_angle(self.curr_pose.position, (point[0], point[1]))
+        self.twist.linear.x = 0
+        self.twist.angular.z = kp * (target_angle - get_yaw_from_pose(self.curr_pose))
         self.cmd_vel_pub.publish(self.twist)
 
     # GRANULAR GRIP MOVEMENT FUNCS
