@@ -9,25 +9,68 @@ import os
 import moveit_commander
 from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Image, LaserScan
+from nav_msgs.msg import Odometry
+from tf.transformations import quaternion_from_euler, euler_from_quaternion
+
 from distances.compute_distances import floyd_warshall
 from action_states.generate_action_states import read_objects_and_bins
 
 # Path of directory on where this file is located
 path_prefix = os.path.dirname(__file__)
 
+def get_yaw_from_pose(p):
+    """ A helper function that takes in a Pose object (geometry_msgs) 
+    and returns yaw """
+
+    yaw = (euler_from_quaternion([
+            p.orientation.x,
+            p.orientation.y,
+            p.orientation.z,
+            p.orientation.w])
+            [2])
+
+    return yaw
+
+def get_target_angle(p1, p2):
+    """ Gets the target angle for the robot to turn to based on robot position (p1)
+    and node position (p2) """
+
+    target_angle = 0
+
+    x1 = p1.x
+    y1 = p1.y
+    x2 = p2[0]
+    y2 = p2[1]
+
+    raw_angle = math.atan(abs(x2 - x1) / abs(y2 - y1))
+
+    if x2 < x1 and y2 > y1:
+        target_angle = -1 * (math.radians(90) - raw_angle)
+    elif x2 > x1 and y2 > y1:
+        target_angle = math.radians(90) - raw_angle
+    elif x2 > x1 and y2 < y1:
+        target_angle = math.radians(180) - raw_angle
+    elif x2 < x1 and y2 < y1:
+        target_angle = -1 * (math.radians(180) - raw_angle)
+
+    return target_angle
+
 class RobotMovement(object):
     def __init__(self):
+
+        rospy.init_node('turtlebot3_movement')
 
         # init LIDAR
         rospy.Subscriber("scan", LaserScan, self.update_distance)
         rospy.Subscriber('camera/rgb/image_raw', Image, self.update_image)
+        # init odom
+        rospy.Subscriber("/odom", Odometry, self.odom_callback)
         # init arm
         self.move_arm  = moveit_commander.MoveGroupCommander("arm")
         self.move_grip = moveit_commander.MoveGroupCommander("gripper")
         # init movement
         self.twist = Twist()
         self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=100)
-        rospy.init_node('turtlebot3_movement')
 
         # Fetch pre-built action matrix. This is a 2d numpy array where row indexes
         # correspond to the starting state and column indexes are the next states.
@@ -142,6 +185,15 @@ class RobotMovement(object):
         
         print(self.node_sequence)
 
+    def odom_callback(self, data):
+        """ Processes the odometry data """
+
+        kp = 0.5
+        target_angle = get_target_angle(data.pose.pose.position, (1.4, 1.4))
+        self.twist.linear.x = 0
+        self.twist.angular.z = kp * (target_angle - get_yaw_from_pose(data.pose.pose))
+        self.cmd_vel_pub.publish(self.twist)
+
     # GRANULAR GRIP MOVEMENT FUNCS
     def open_grip(self):
         open_grip = [0.016, 0.016]
@@ -200,6 +252,8 @@ class RobotMovement(object):
         self.image = data
 
     def run(self):
+        rospy.spin()
+        '''
         while True:
             # self.open_grip()
             self.open_grip()
@@ -208,8 +262,7 @@ class RobotMovement(object):
                 time.sleep(3)
                 self.let_go()
             # self.move_fwd()
-
-        rospy.spin()
+        '''
 
 if __name__ == "__main__":
     node = RobotMovement()
