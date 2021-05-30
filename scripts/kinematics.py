@@ -37,13 +37,14 @@ def get_target_angle(p1, p2):
 
     target_angle = 0
 
+    # Get all the x and y coordinates
     x1 = p1.x
     y1 = p1.y
     x2 = p2[0]
     y2 = p2[1]
 
+    # Calculate the angle between p1 and p2 as an absolute value
     raw_angle = math.atan(abs(x2 - x1) / abs(y2 - y1))
-
     print("raw", raw_angle)
 
     # Visualize this by positioning the camera angle with x axis on the horizontal
@@ -68,6 +69,7 @@ def get_target_angle(p1, p2):
 class RobotMovement(object):
     def __init__(self):
 
+        # init node
         rospy.init_node('turtlebot3_movement')
 
         # This will be set to True once everything is set up
@@ -125,9 +127,12 @@ class RobotMovement(object):
         self.locations = []
         self.load_locations()
 
-        # For pose and orientation use
+        # Set up pose and orientation variables
         self.curr_pose = Pose()
         self.oriented = False
+
+        # Set up kp for proportional control
+        self.kp = 0.2
 
         # Get the array of shortest paths from node to node
         weight_mat = np.genfromtxt(path_prefix + "/distances/" + "map1_matrix.csv", delimiter=',')
@@ -146,11 +151,13 @@ class RobotMovement(object):
         self.node_sequence = []
         self.get_node_sequence()
 
-        # We good to go!
+        # We are good to go!
         self.initialized = True
 
     def load_locations(self):
-        """ Loads locations of each node"""
+        """ Load locations of each node """
+        
+        # Store the file into self.locations
         self.locations = np.loadtxt(path_prefix + "/locations.csv", delimiter = ',')
 
     def load_q_matrix(self):
@@ -214,34 +221,50 @@ class RobotMovement(object):
         print(self.node_sequence)
 
     def odom_callback(self, data):
-        """ Saves the odometry data """
+        """ Save the odometry data """
+
+        # Do nothing if not initialized
         if not self.initialized:
             return
 
+        # Save robot pose to self.curr_pose
         self.curr_pose = data.pose.pose
 
     def orient(self, p):
-        """ Given a node number, orients robot to face that node"""
+        """ Given a node number, orient robot to face that node """
+
+        # Do nothing if not initialized
         if not self.initialized:
             return
 
+        # Sleep for 1 second to make sure the position data is retrieved
         rospy.sleep(1)
-
-        self.oriented = False
-        kp = 0.2
         
+        # Get the robot/node positions, calculate target angle and diff for 
+        #   proportional control
         point = self.locations[p]
         target_angle = get_target_angle(self.curr_pose.position, (point[0], point[1]))
         diff = target_angle - get_yaw_from_pose(self.curr_pose)
+
+        # For testing: print target angle and the angle difference
         print("target ang", target_angle)
         print("diff", diff)
 
+        # Set linear velocity to 0 since we only care about angular orientation
         self.twist.linear.x = 0
+
+        # If the angle difference is greater than a threshold, keep turning based
+        #   on the robot's angle to the node with proportional control
         if abs(diff) > 0.1:
-            self.twist.angular.z = kp * diff
+            self.twist.angular.z = self.kp * diff
+
+        # Otherwise, the robot is now facing the node and we stop turning and 
+        #   set self.oriented to True
         else:
             self.twist.angular.z = 0
             self.oriented = True
+
+        # Publish the velocities
         self.cmd_vel_pub.publish(self.twist)
 
     # GRANULAR GRIP MOVEMENT FUNCS
@@ -306,9 +329,10 @@ class RobotMovement(object):
         r = rospy.Rate(10)
         
         while not rospy.is_shutdown():
-            self.orient(5)
+            self.orient(3)
             print(self.oriented)
             r.sleep()
+
         '''
         while True:
             # self.open_grip()
