@@ -34,7 +34,21 @@ The four main components of the project are 1) developing a fixed map with known
 The main algorithm we implemented is the Q-learning algorithm, where we trained a Q-matrix by randomly choosing actions for the robot to take with a given state. We defined the action and state spaces discretely and minimalistically since the number of permutations can get really large. The actions specify the type, color, and location of the object to be picked up and states specify the location of the robot (which node it is on) and the states of each object (whether it is at its starting place or in a bin), and we integrated them into an action matrix so we can easily identify which action transitions which state. We also have a reward callback that updates the Q-matrix values with each action, and we iterate through the Q-learning algorithm until the Q-matrix converges under a certain threshold. With the trained Q-matrix (which is a matrix of action-state pairs), we start from the origin position of the robot and chooses the action that has the highest Q-value in a given state and move onto the next state, and we continue iterating until all non-obstacle objects are successfully sorted. Therefore, we have generated an action sequence, which we converted into a sequence of nodes that produces the shortest path for the robot to follow with the Floyd-Warshall algorithm.
 
 ### Describe each major component of your project
-TODO
+#### Q-learning
+- **Defining the States and the Actions:**
+
+Our definition of a state involved both the location of the robot and the location of each object. The location of the robot was encoded as the node it is currently at in the graph and the locations of each object was encoded as whether or not they are placed in the correct bin (0 or 1). So, for instance a state (4,1,0,1) would indicate that the robot is at node 4, the first object is correctly placed in its bin etc. 
+
+The code for defining and generating the states, and the state action matrix is in `generate_action_states.py`. The function `read_objects_and_bins()` reads the user input object and bin information in the corresponding csv files to be used to generate the state-action matrix. The function `generate_states()` then generates all possible states using the cartesian product of each object state and robot location. The function `generate_action_matrix()` then generates the state-action matrix by considering what action takes us to which state based on the object and current state information. The generated states and state-action matrix are then saved to `states.csv` and `action_matrix.csv`. 
+
+- **The Reward Function:**
+
+The reward function that we used for Q-Learning considers both the distance the robot has to travel to put an object to a bin and the reward associated with that object type. The dumbbells have 100 points, and the balls have 50 points of reward each. The distance that the robot has to travel is discounted from the published reward to encourage picking up closer objects. 
+
+The code for the reward publication is in `reward.py` and uses the custom message `QLearningReward.msg`. Each time a robot action is published, `send_reward()` is called, which publishes the reward that is described above. The distances are read from `distances.npy`, and the world is reset when all objects are moved into place. 
+
+- **Q-Learning Algorithm:**
+
 
 ### Highlight what pieces of code contribute to these main components
 TODO
