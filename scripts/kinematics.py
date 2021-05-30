@@ -44,12 +44,14 @@ def get_target_angle(p1, p2):
 
     raw_angle = math.atan(abs(x2 - x1) / abs(y2 - y1))
 
+    print("raw", raw_angle)
+
     if x2 < x1 and y2 > y1:
         target_angle = -1 * (math.radians(90) - raw_angle)
     elif x2 > x1 and y2 > y1:
         target_angle = math.radians(90) - raw_angle
     elif x2 > x1 and y2 < y1:
-        target_angle = math.radians(180) - raw_angle
+        target_angle = raw_angle - math.radians(90)
     elif x2 < x1 and y2 < y1:
         target_angle = -1 * (math.radians(180) - raw_angle)
 
@@ -207,11 +209,14 @@ class RobotMovement(object):
 
     def orient(self, p):
         """ given a node number, orients robot to face that node"""
-        kp = 0.5
+        kp = 0.2
         point = self.locations[p]
         target_angle = get_target_angle(self.curr_pose.position, (point[0], point[1]))
+        #print("pose:", self.curr_pose)
+        print("target ang", target_angle)
         self.twist.linear.x = 0
         self.twist.angular.z = kp * (target_angle - get_yaw_from_pose(self.curr_pose))
+        print(kp * (target_angle - get_yaw_from_pose(self.curr_pose)))
         self.cmd_vel_pub.publish(self.twist)
 
     # GRANULAR GRIP MOVEMENT FUNCS
@@ -272,7 +277,15 @@ class RobotMovement(object):
         self.image = data
 
     def run(self):
-        rospy.spin()
+        #rospy.spin()
+
+        #self.orient(1)
+        
+        r = rospy.Rate(1)
+        
+        while not rospy.is_shutdown():
+            self.orient(1)
+            r.sleep()
         '''
         while True:
             # self.open_grip()
