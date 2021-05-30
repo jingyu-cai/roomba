@@ -3,6 +3,17 @@
 ## Team Members
 Karhan Kayan, Jingyu Cai, Zack Wang, Yoon Jeong
 
+## Testing Steps
+
+### Q Learning
+$ roscore
+$ roslaunch roomba training.launch
+
+### Robot Perception & Movement
+$ roscore
+$ roslaunch roomba room.launch
+$ rosrun roomba kinematics.py
+
 ## Project Description
 
 ### Goal of the project
