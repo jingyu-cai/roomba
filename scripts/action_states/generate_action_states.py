@@ -12,7 +12,7 @@ object_to_index = {}
 
 path_prefix = os.path.dirname(__file__)
 
-
+#read the object and bin information from the corresponding csv files. This is user input.
 def read_objects_and_bins(path):
     bins = {}
     objects = []
@@ -32,28 +32,32 @@ def read_objects_and_bins(path):
 
     return objects, bins
 
-
+#Generate all possible states
 def generate_states(objects):
     ls_nodes = list(range(num_nodes))
     ls_complete = [ls_nodes]
 
+    #iterate through all objects 
     for i, obj in enumerate(objects):
         object_to_index[str(obj)] = i+1
         ls_complete.append([0,1])
     
+    #find possible states from cartesian product
     temp = itertools.product(*ls_complete)
     states = list([list(tup) for tup in temp])
     return states
 
-    
+#generate the state-action matrix 
 def generate_action_matrix(states, objects, bins):
     n = len(states)
     action_matrix = np.ones((n,n), dtype=int) * (-1)
     
+    #for each state look at all actions and the next states from those actions
     for i, state in enumerate(states):
         for obj in objects:
             index = object_to_index[str(obj)]
             color = obj[1]
+            #if the object hasn't been moved then move it and calculate next state
             if state[index] == 0:
                 nextstate = state.copy()
                 nextstate[index] = 1
@@ -63,6 +67,7 @@ def generate_action_matrix(states, objects, bins):
                     action_matrix[i, state_index] = index -1 
     return action_matrix
 
+#save the states and state-action matrix to csv
 def save_data(data, name):
     """ Saves a list to a csv file using numpy """
 

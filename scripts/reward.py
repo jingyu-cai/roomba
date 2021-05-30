@@ -71,7 +71,7 @@ class Reward(object):
         node = data.node
         reset_world = False
 
-        #set reward
+        #set reward according to the type of the object
         if obj == 'dumbbell':
             reward_amount = self.dumbbell_reward
             self.non_obstacles_inplace += 1
@@ -86,11 +86,11 @@ class Reward(object):
         else:
             raise Exception("Wrong object type")
 
-        #adjust with respect to distance
+        #adjust with respect to distance that the robot has to travel
         reward_amount -= self.distance[node, self.bin_nodes[color]] + self.distance[node, self.robot_location]
         self.robot_location = self.bin_nodes[color]
 
-        
+        #if objects are in place reset the world
         if self.non_obstacles_inplace == self.num_nonobstacles:
             reset_world = True
 
@@ -106,7 +106,7 @@ class Reward(object):
         print("Published reward: ", reward_amount)
 
         # increment iteration if world needs to be reset
-        #reset obj positions 
+        #reset object positions 
         if reset_world:
             print("resetting the world")
             self.iteration_num += 1

@@ -1,7 +1,7 @@
 import numpy as np
 
 '''
-returns the min distances between each node 
+returns the min distances between each node and the shortest path for each pair of nodes
 n is the number of nodes
 weight_mat is the adjacency mat of the graph
 '''
@@ -9,7 +9,7 @@ def floyd_warshall(n, weight_mat):
     distance = np.zeros((n,n), dtype = int)
     Next = np.zeros((n,n), dtype = int)
 
-    #initialize shortest distance and path helper
+    #initialize shortest distance and path helper to decide what node is next in the path
     for i in range(n):
         for j in range(n):
             distance[i,j] = weight_mat[i,j]
@@ -19,19 +19,19 @@ def floyd_warshall(n, weight_mat):
             else:
                 Next[i,j] = j
 
-    #compute shortest paths
+    #compute shortest paths using dynamic programming
     for k in range(n):
         for i in range(n):
             for j in range(n):
-                #cannot travel through nonexistent edges
+                
                 if i == j:
                     continue
-
+                #if going through the intermediate node is shorter, update the shortest path 
                 if distance[i,k] + distance[k,j] < distance[i,j]:
                     distance[i,j] = distance[i,k] + distance[k,j]
                     Next[i,j] = Next[i,k]
 
-    #find shortest path from Next
+    #find shortest path from Next by iterating on it
     def find_shortest_path(i,j):
         if Next[i,j] == -1:
             return []
@@ -42,7 +42,7 @@ def floyd_warshall(n, weight_mat):
             shortest_path.append(i)
         return shortest_path
 
-    #write down all shortest paths
+    #write down all shortest paths for each pair
     paths = [[None for x in range(n)] for y in range(n)]
     for i in range(n):
         for j in range(n):
@@ -58,7 +58,7 @@ if __name__=="__main__":
 
     n = weight_mat.shape[0]
 
-
+    #set 0 dist to infinity for the algorithm 
     for i in range(weight_mat.shape[0]):
         for j in range(weight_mat.shape[1]):
             if weight_mat[i,j] == 0:
@@ -66,6 +66,7 @@ if __name__=="__main__":
 
     distance, paths = floyd_warshall(n, weight_mat)
 
+    #write the shortest paths to a file
     with open("shortest_paths.txt", "w") as file:
         file.write(str(paths))
 
