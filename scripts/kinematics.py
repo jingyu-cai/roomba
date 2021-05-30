@@ -46,14 +46,22 @@ def get_target_angle(p1, p2):
 
     print("raw", raw_angle)
 
+    # Visualize this by positioning the camera angle with x axis on the horizontal
+    #   (left -> right increase) and y axis on the vertical (down -> up increase)
+    # Note: the yaw of the robot is 0 when facing positive x axis, left turn +yaw,
+    #   right turn -yaw
     if x2 < x1 and y2 > y1:
-        target_angle = -1 * (math.radians(90) - raw_angle)
+        print("top left")
+        target_angle = math.radians(90) + raw_angle
     elif x2 > x1 and y2 > y1:
+        print("top right")
         target_angle = math.radians(90) - raw_angle
     elif x2 > x1 and y2 < y1:
-        target_angle = raw_angle - math.radians(90)
+        print("bottom right")
+        target_angle = -1 * (math.radians(90) - raw_angle)
     elif x2 < x1 and y2 < y1:
-        target_angle = -1 * (math.radians(180) - raw_angle)
+        print("bottom left")
+        target_angle = -1 * (math.radians(90) + raw_angle)
 
     return target_angle
 
@@ -61,6 +69,9 @@ class RobotMovement(object):
     def __init__(self):
 
         rospy.init_node('turtlebot3_movement')
+
+        # This will be set to True once everything is set up
+        self.initialized = False
 
         # init LIDAR
         rospy.Subscriber("scan", LaserScan, self.update_distance)
@@ -110,10 +121,13 @@ class RobotMovement(object):
         self.q_matrix = []
         self.load_q_matrix()
 
+        # Set up a list to store the node locations
         self.locations = []
         self.load_locations()
 
+        # For pose and orientation use
         self.curr_pose = Pose()
+        self.oriented = False
 
         # Get the array of shortest paths from node to node
         weight_mat = np.genfromtxt(path_prefix + "/distances/" + "map1_matrix.csv", delimiter=',')
@@ -131,6 +145,9 @@ class RobotMovement(object):
         # set up the node sequence
         self.node_sequence = []
         self.get_node_sequence()
+
+        # We good to go!
+        self.initialized = True
 
     def load_locations(self):
         """ Loads locations of each node"""
@@ -198,25 +215,33 @@ class RobotMovement(object):
 
     def odom_callback(self, data):
         """ Saves the odometry data """
+        if not self.initialized:
+            return
+
         self.curr_pose = data.pose.pose
-        '''
-        kp = 0.5
-        target_angle = get_target_angle(data.pose.pose.position, (1.4, 1.4))
-        self.twist.linear.x = 0
-        self.twist.angular.z = kp * (target_angle - get_yaw_from_pose(data.pose.pose))
-        self.cmd_vel_pub.publish(self.twist)
-        '''
 
     def orient(self, p):
-        """ given a node number, orients robot to face that node"""
+        """ Given a node number, orients robot to face that node"""
+        if not self.initialized:
+            return
+
+        rospy.sleep(1)
+
+        self.oriented = False
         kp = 0.2
+        
         point = self.locations[p]
         target_angle = get_target_angle(self.curr_pose.position, (point[0], point[1]))
-        #print("pose:", self.curr_pose)
+        diff = target_angle - get_yaw_from_pose(self.curr_pose)
         print("target ang", target_angle)
+        print("diff", diff)
+
         self.twist.linear.x = 0
-        self.twist.angular.z = kp * (target_angle - get_yaw_from_pose(self.curr_pose))
-        print(kp * (target_angle - get_yaw_from_pose(self.curr_pose)))
+        if abs(diff) > 0.1:
+            self.twist.angular.z = kp * diff
+        else:
+            self.twist.angular.z = 0
+            self.oriented = True
         self.cmd_vel_pub.publish(self.twist)
 
     # GRANULAR GRIP MOVEMENT FUNCS
@@ -277,14 +302,12 @@ class RobotMovement(object):
         self.image = data
 
     def run(self):
-        #rospy.spin()
-
-        #self.orient(1)
         
-        r = rospy.Rate(1)
+        r = rospy.Rate(10)
         
         while not rospy.is_shutdown():
-            self.orient(1)
+            self.orient(5)
+            print(self.oriented)
             r.sleep()
         '''
         while True:
