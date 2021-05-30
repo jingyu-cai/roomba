@@ -36,4 +36,4 @@ If we had more time, it would be cool if we could give more freedom to the robot
 
 ### Takeaways
 - The first takeaway is that for a big project like this with many individual components that require a lot of integration, it is very important to get everyone on the same page. This can be done with clear code comments, updating each other with what they are doing/have done, and periodic meetings to summarize the progress and make plans for next steps. By doing so, it can save a lot of time and energy wasted on potential misunderstandings and improve the overall efficiency of the group dramatically.
-TODO: A few bullet points
+- TODO: A few more bullet points
