@@ -5,11 +5,11 @@ Karhan Kayan, Jingyu Cai, Zack Wang, Yoon Jeong
 
 ## Testing Steps
 
-### Q Learning
+### Q-learning
     $ roscore
     $ roslaunch roomba training.launch
 
-### Robot Perception & Movement
+### Robot perception & movement
     $ roscore
     $ roslaunch roomba room.launch
     $ rosrun roomba kinematics.py
