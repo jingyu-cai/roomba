@@ -49,6 +49,21 @@ The code for the reward publication is in `reward.py` and uses the custom messag
 
 - **Q-Learning Algorithm:**
 
+Similar to the Q-learning project, the Q-learning algorithm in this project uses the action matrix to first choose a random action starting from the origin state, then receive the reward to update the Q-matrix, and finally move onto the next state. This training process would continue until the Q-matrix converges under a certain threshold for a specific amount of iterations, which we tuned to ensure a sufficient convergence without having to train a really large number of iterations. Lastly, we generated an action sequence from the Q-matrix by starting from the origin state and taking the action that has the highest Q-value until all the non-obstacle objects are moved. Then, using the Floyd-Warshall algorithm, we also converted that action sequence into a sequence of nodes for the robot to orient towards and follow.
+
+The code for the Q-learning algorithm is located in `q_learning.py`.
+`init()`: In here, we set up the necessary variables for selecting and executing actions for the robot/phantom robot, including the publishers for `QMatrix()` and `RobotAction()`, the action matrix, actions, and states from the pre-defined files, and variables to keep track of the robot's state. We also initialized the Q-matrix and published it, and chose a random action to begin. 
+`initialize_q_matrix()`: In here, we assigned every cell within the Q-matrix with a value of 0 to start.
+`select_random_action()`: In here, we identified the valid actions to take given a current state from self.action_matrix, and randomly selected one of those actions using numpy's `choice()` function. Then, after updating what the next state would be for the selected action, we published the dumbbell color and block number via a `RobotAction()` message for the robot/phantom robot to execute.
+`update_q_matrix()`: In here, we used the Q-learning algorithm to update the Q-matrix given a particular state and action, and is called in `reward_received()` whenever there is a reward callback. After each update, we checked if the Q-value change is above or below the defined self.epsilon from `init()`. If it is below, we increase our count of the `self.static_tracker`. Otherwise, we set the tracker value back to 0.
+`is_converged()`: This checks if the number of static iterations meet `self.static_iter_threshold`.
+`reward_received()`: This integrates the above functions to check if the Q-matrix has converged after every reward callback, and saves the matrix if it has converged or keep taking random actions if otherwise.
+
+The code for converting the converged Q-matrix into the action and node sequence are located in `kinematics.py`.
+`get_action_sequence()`: After loading the converged q_matrix.csv, we will iterate through each state, beginning with 256 (when robot is at the origin) and choose the largest Q-value as the action to take. We will append each action onto the `self.action_sequence` array containing elements of tuples in the form of (obj, clr, node)
+`get_node_sequence()`: After computing the shortest paths between each nodes using the `floyd_warshall()` function from `compute_distances.py`, we will find where the robot’s current node location is and which node it should go next to pick up an object from `self.action_sequence` and convert that into a sequence of nodes that represents the shortest path between the two nodes, then we will find the sequence of nodes that represents the shortest path between the node of the object and the node of the bin. We append the two sequences as one object in the `self.node_sequence` array as one complete action, and we iterate through the `self.action_sequence` until all actions are converted into sequences of nodes.
+
+
 #### Path Finding
 
 - **Finding the Optimal Path in Graph Representation:**
