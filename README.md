@@ -49,6 +49,16 @@ The code for the reward publication is in `reward.py` and uses the custom messag
 
 - **Q-Learning Algorithm:**
 
+#### Path Finding
+
+- **Finding the Optimal Path in Graph Representation:**
+
+We needed to implement an optimal path finding algorithm for both the calculation of reward in the training phase and navigating the map in the execution phase. To do this, we represented the map abstractly in graph form using its adjacency matrix. Then we calculated the shortest paths using the Floyd Warshall algorithm. This is a dynamic programming based algorithm that calculates the distance between each pair of nodes in a weighted graph by considering the intermediate nodes the shortest path can go through. We modified the algorithm to also print out the list of nodes for the shortest path between each pair of nodes. 
+
+-The code for path finding is located in the distances folder in `compute_distances.py`. We read the adjacency matrix provided by the user and preprocess it to give infinity weights to edges that do not exist. 
+-The `floyd_warshall()` function takes in the preprocessed adjacency matrix as the argument and returns the shortest distances and paths based on the Floyd Warshall algorithm. 
+-`find_shortest_path()` uses the subsequent node information for each pair of nodes to recursively calculate the list of nodes for the shortest paths. 
+-The shortest distances are saved to `distances.npy` and the shortest paths are saved to `shortest_paths.txt`.
 
 ## Challenges, Future Work, and Takeaways
 
