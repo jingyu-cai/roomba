@@ -151,6 +151,10 @@ class RobotMovement(object):
         self.node_sequence = []
         self.get_node_sequence()
 
+         # set up ROS / OpenCV bridge
+        #ros uses its own image type, cv bridge nicer to work with
+        self.bridge = cv_bridge.CvBridge()
+
         # We are good to go!
         self.initialized = True
 
@@ -321,8 +325,59 @@ class RobotMovement(object):
     # STATE UPDATE FUNCS
     def update_distance(self, data):
         self.distance = data.ranges[0]
+
     def update_image(self, data):
         self.image = data
+
+    def goTo(self, destination):
+
+        r = rospy.Rate(3)
+        while not self.oriented:
+            self.orient(destination)
+            r.sleep
+        while (distance between pose and desintation > 0.3):
+            self.drive_along()
+            r.sleep
+        self.stop()
+        return
+
+    def drive_along(self): #follow the yellow line
+         # converts the incoming ROS message to OpenCV format and HSV (hue, saturation, value)
+        image = self.bridge.imgmsg_to_cv2(self.image,desired_encoding='bgr8')
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+        # TODO: define the upper and lower bounds for what should be considered 'yellow'
+        # h = 60 deg, s from 1/4 to 1, v 1  to 3/4
+        lower_yellow = numpy.array([10, 10, 10]) #TODO
+        upper_yellow = numpy.array([90, 255, 255]) #TODO
+        mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+
+        # this erases all pixels that aren't yellow
+        h, w, d = image.shape
+        search_top = int(3*h/4)
+        search_bot = int(3*h/4 + 20)
+        mask[0:search_top, 0:w] = 0
+        mask[search_bot:h, 0:w] = 0
+
+        # using moments() function, the center of the yellow pixels is determined
+        M = cv2.moments(mask)
+        # if there are any yellow pixels found
+        if M['m00'] > 0:
+            # center of the yellow pixels in the image
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+
+            # a red circle is visualized in the debugging window to indicate
+            # the center point of the yellow pixels
+            cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
+
+            err = w/2 - cx
+            k_p = 0.01
+            self.twist.linear.x = 0.2
+            self.twist.angular.z = k_p * err
+            self.pub.publish(self.twist)
+
+
 
     ''' stitched together version
     def run(self):
