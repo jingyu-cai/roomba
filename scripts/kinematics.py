@@ -52,16 +52,16 @@ def get_target_angle(p1, p2):
     # Note: the yaw of the robot is 0 when facing positive x axis, left turn +yaw,
     #   right turn -yaw
     if x2 < x1 and y2 > y1:
-        print("top left")
+        # print("top left")
         target_angle = math.radians(90) + raw_angle
     elif x2 > x1 and y2 > y1:
-        print("top right")
+        #print("top right")
         target_angle = math.radians(90) - raw_angle
     elif x2 > x1 and y2 < y1:
-        print("bottom right")
+        #print("bottom right")
         target_angle = -1 * (math.radians(90) - raw_angle)
     elif x2 < x1 and y2 < y1:
-        print("bottom left")
+        #print("bottom left")
         target_angle = -1 * (math.radians(90) + raw_angle)
 
     return target_angle
@@ -218,7 +218,7 @@ class RobotMovement(object):
             self.node_sequence.append(one_sequence)
             curr_node = bin_node
         
-        print(self.node_sequence)
+        print("node seq", self.node_sequence)
 
     def odom_callback(self, data):
         """ Save the odometry data """
@@ -247,8 +247,8 @@ class RobotMovement(object):
         diff = target_angle - get_yaw_from_pose(self.curr_pose)
 
         # For testing: print target angle and the angle difference
-        print("target ang", target_angle)
-        print("diff", diff)
+        #print("target ang", target_angle)
+        #print("diff", diff)
 
         # Set linear velocity to 0 since we only care about angular orientation
         self.twist.linear.x = 0
@@ -324,16 +324,31 @@ class RobotMovement(object):
     def update_image(self, data):
         self.image = data
 
+    ''' stitched together version
+    def run(self):
+        for seq in self.node_sequence:
+            prePickup = seq[0]
+            postPickup = seq[1]
+            for n in prePickup:
+                self.goTo(n)
+            self.recognize_obj()
+            self.pick_up()
+            for m in postPickup:
+                self.goTo(m)
+            self.let_go()
+    '''
+
     def run(self):
         
+        print(self.action_sequence)
+        '''
         r = rospy.Rate(10)
         
         while not rospy.is_shutdown():
-            self.orient(3)
+            self.orient(5)
             print(self.oriented)
             r.sleep()
 
-        '''
         while True:
             # self.open_grip()
             self.open_grip()
