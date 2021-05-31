@@ -26,7 +26,7 @@ We think that this kind of robot would be helpful in the real world - picking an
 TODO: include gif/screenshots
 
 ### What are the main components of your project and how they fit together?
-The four main components of the project are 1) developing a fixed map with known distances between nodes and locations of objects, 2) training a Q-matrix with the Q-learning algorithm on the map, and executing the most optimal actions based on robot 3) perception and 4) kinematics. First, given the map and the states of the robot and the objects, we were able to create an action space and a state space to train the Q-matrix with. For reward, we took into account the type of object the robot picks up (dumbbell has the highest reward, ball/kettlebell second, and you can't pick up a cubic obstacle) and the distance it took for the robot to complete the pick up-drop off action (so the robot would need to choose between prioritizing high-value objects or shortest paths). With the converged Q-matrix, we selected the most optimal action from each given state the robot is in to create an action sequence for the robot to execute so to maximize the reward, and we used the Floyd-Warshall algorithm to convert that into the shortest path the robot would take to complete each action in the form of a sequence of nodes. The robot will use perception to follow the yellow lines to traverse the map, and use its arm to pick up and drop off objects at bins with the same colors. To add complexity to the project, we also used computer vision to identify the type of object the robot is going to pick up without previous knowledge of what object is at each node (in other words, the robot only knows what path to take but doesn't know what arm action to take to handle the object before the robot identifies it).
+The five main components of the project are 1) developing a fixed map with known distances between nodes and locations of objects, 2) computing the optimal paths in the graph representation, 3) training a Q-matrix with the Q-learning algorithm on the map, and executing the most optimal actions based on robot 4) perception and 5) kinematics. First, given the map and the states of the robot and the objects, we were able to create an action space and a state space to train the Q-matrix with. For reward, we took into account the type of object the robot picks up (dumbbell has the highest reward, ball/kettlebell second, and you can't pick up a cubic obstacle) and the distance it took for the robot to complete the pick up-drop off action with the Floyd-Warshall algorithm (so the robot would need to choose between prioritizing high-value objects or shortest paths). With the converged Q-matrix, we selected the most optimal action from each given state the robot is in to create an action sequence for the robot to execute so to maximize the reward, and we used the Floyd-Warshall algorithm again to convert that into the shortest path the robot would take to complete each action in the form of a sequence of nodes. The robot will use perception to follow the yellow lines to traverse the map, and use its arm to pick up and drop off objects at bins with the same colors. To add complexity to the project, we also used computer vision to identify the type of object the robot is going to pick up without previous knowledge of what object is at each node (in other words, the robot only knows what path to take but doesn't know what arm action to take to handle the object before the robot identifies it).
 
 ## System Architecture
 
@@ -34,6 +34,18 @@ The four main components of the project are 1) developing a fixed map with known
 The main algorithm we implemented is the Q-learning algorithm, where we trained a Q-matrix by randomly choosing actions for the robot to take with a given state. We defined the action and state spaces discretely and minimalistically since the number of permutations can get really large. The actions specify the type, color, and location of the object to be picked up and states specify the location of the robot (which node it is on) and the states of each object (whether it is at its starting place or in a bin), and we integrated them into an action matrix so we can easily identify which action transitions which state. We also have a reward callback that updates the Q-matrix values with each action, and we iterate through the Q-learning algorithm until the Q-matrix converges under a certain threshold. With the trained Q-matrix (which is a matrix of action-state pairs), we start from the origin position of the robot and chooses the action that has the highest Q-value in a given state and move onto the next state, and we continue iterating until all non-obstacle objects are successfully sorted. Therefore, we have generated an action sequence, which we converted into a sequence of nodes that produces the shortest path for the robot to follow with the Floyd-Warshall algorithm.
 
 ### Describe each major component of your project and highlight what pieces of code contribute to these main components
+
+#### Path Finding
+
+- **Finding the Optimal Path in Graph Representation:**
+
+We needed to implement an optimal path finding algorithm for both the calculation of reward in the training phase and navigating the map in the execution phase. To do this, we represented the map abstractly in graph form using its adjacency matrix. Then we calculated the shortest paths using the Floyd Warshall algorithm. This is a dynamic programming based algorithm that calculates the distance between each pair of nodes in a weighted graph by considering the intermediate nodes the shortest path can go through. We modified the algorithm to also print out the list of nodes for the shortest path between each pair of nodes. 
+
+- The code for path finding is located in the distances folder in `compute_distances.py`. We read the adjacency matrix provided by the user and preprocess it to give infinity weights to edges that do not exist. 
+- The `floyd_warshall()` function takes in the preprocessed adjacency matrix as the argument and returns the shortest distances and paths based on the Floyd Warshall algorithm. 
+- `find_shortest_path()` uses the subsequent node information for each pair of nodes to recursively calculate the list of nodes for the shortest paths. 
+- The shortest distances are saved to `distances.npy` and the shortest paths are saved to `shortest_paths.txt`.
+
 #### Q-Learning
 - **Defining the States and the Actions:**
 
@@ -62,17 +74,6 @@ The code for the Q-learning algorithm is located in `q_learning.py`:
 The code for converting the converged Q-matrix into the action and node sequence are located in `kinematics.py`:
 - `get_action_sequence()`: After loading the converged q_matrix.csv, we will iterate through each state, beginning with 256 (when robot is at the origin) and choose the largest Q-value as the action to take. We will append each action onto the `self.action_sequence` array containing elements of tuples in the form of (obj, clr, node)
 - `get_node_sequence()`: After computing the shortest paths between each nodes using the `floyd_warshall()` function from `compute_distances.py`, we will find where the robot’s current node is and which node it should go next to pick up an object from `self.action_sequence` and convert that into a sequence of nodes that represents the shortest path between the two nodes, then we will find the sequence of nodes that represents the shortest path between the node of the object and the node of the bin. We append the two sequences as one object onto the `self.node_sequence` array to indicate a complete action, and we iterate through the `self.action_sequence` until all actions are converted into sequences of nodes.
-
-#### Path Finding
-
-- **Finding the Optimal Path in Graph Representation:**
-
-We needed to implement an optimal path finding algorithm for both the calculation of reward in the training phase and navigating the map in the execution phase. To do this, we represented the map abstractly in graph form using its adjacency matrix. Then we calculated the shortest paths using the Floyd Warshall algorithm. This is a dynamic programming based algorithm that calculates the distance between each pair of nodes in a weighted graph by considering the intermediate nodes the shortest path can go through. We modified the algorithm to also print out the list of nodes for the shortest path between each pair of nodes. 
-
-- The code for path finding is located in the distances folder in `compute_distances.py`. We read the adjacency matrix provided by the user and preprocess it to give infinity weights to edges that do not exist. 
-- The `floyd_warshall()` function takes in the preprocessed adjacency matrix as the argument and returns the shortest distances and paths based on the Floyd Warshall algorithm. 
-- `find_shortest_path()` uses the subsequent node information for each pair of nodes to recursively calculate the list of nodes for the shortest paths. 
-- The shortest distances are saved to `distances.npy` and the shortest paths are saved to `shortest_paths.txt`.
 
 #### Perception
 
