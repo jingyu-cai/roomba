@@ -47,6 +47,7 @@ We needed to implement an optimal path finding algorithm for both the calculatio
 - The shortest distances are saved to `distances.npy` and the shortest paths are saved to `shortest_paths.txt`.
 
 #### Q-Learning
+
 - **Defining the States and the Actions:**
 
 Our definition of a state involved both the location of the robot and the location of each object. The location of the robot was encoded as the node it is currently at in the graph and the locations of each object was encoded as whether or not they are placed in the correct bin (0 or 1). So, for instance a state (4,1,0,1) would indicate that the robot is at node 4, the first object is correctly placed in its bin etc. 
