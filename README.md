@@ -74,6 +74,10 @@ We needed to implement an optimal path finding algorithm for both the calculatio
 - `find_shortest_path()` uses the subsequent node information for each pair of nodes to recursively calculate the list of nodes for the shortest paths. 
 - The shortest distances are saved to `distances.npy` and the shortest paths are saved to `shortest_paths.txt`.
 
+#### Perception
+
+#### Kinematics
+
 ## Challenges, Future Work, and Takeaways
 
 ### Challenges
