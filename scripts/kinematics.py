@@ -7,6 +7,7 @@ import time
 import os
 
 import moveit_commander
+import cv2, cv_bridge
 from geometry_msgs.msg import Twist, Vector3, Pose
 from sensor_msgs.msg import Image, LaserScan
 from nav_msgs.msg import Odometry
@@ -335,7 +336,10 @@ class RobotMovement(object):
         while not self.oriented:
             self.orient(destination)
             r.sleep
-        while (distance between pose and desintation > 0.3):
+
+        abs_loc = self.locations[destination]
+        abs_dist = abs(self.curr_pose.position.x - abs_loc[0]) + abs(self.curr_pose.position.y - abs_loc[1])
+        while (abs_dist > 0.5):
             self.drive_along()
             r.sleep
         self.stop()
@@ -348,8 +352,8 @@ class RobotMovement(object):
 
         # TODO: define the upper and lower bounds for what should be considered 'yellow'
         # h = 60 deg, s from 1/4 to 1, v 1  to 3/4
-        lower_yellow = numpy.array([10, 10, 10]) #TODO
-        upper_yellow = numpy.array([90, 255, 255]) #TODO
+        lower_yellow = np.array([10, 10, 10]) #TODO
+        upper_yellow = np.array([90, 255, 255]) #TODO
         mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
 
         # this erases all pixels that aren't yellow
@@ -375,7 +379,7 @@ class RobotMovement(object):
             k_p = 0.01
             self.twist.linear.x = 0.2
             self.twist.angular.z = k_p * err
-            self.pub.publish(self.twist)
+            self.cmd_vel_pub.publish(self.twist)
 
 
 
@@ -395,7 +399,7 @@ class RobotMovement(object):
 
     def run(self):
         
-        print(self.action_sequence)
+        print(self.goTo(2))
         '''
         r = rospy.Rate(10)
         
