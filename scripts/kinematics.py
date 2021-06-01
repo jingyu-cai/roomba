@@ -2,6 +2,7 @@
 
 import rospy
 import numpy as np
+import cv2, cv_bridge
 import math
 import time
 import os
@@ -75,6 +76,9 @@ class RobotMovement(object):
         # This will be set to True once everything is set up
         self.initialized = False
 
+        # init computer vision
+        self.cv = cv_bridge.CvBridge()
+        cv2.namedWindow("window", 1) # debugging window
         # init LIDAR
         rospy.Subscriber("scan", LaserScan, self.update_distance)
         rospy.Subscriber('camera/rgb/image_raw', Image, self.update_image)
@@ -271,6 +275,45 @@ class RobotMovement(object):
         # Publish the velocities
         self.cmd_vel_pub.publish(self.twist)
 
+    # COMPUTER VISION
+    def observe(self):
+        yellow = {
+            "lower": np.array([ 10, 10, 10]),
+            "upper": np.array([255, 255, 250])
+        }
+        image = self.cv.imgmsg_to_cv2(self.image, desired_encoding='bgr8')
+
+        # boilerplate vars
+        h, w, d = image.shape
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, yellow["lower"], yellow["upper"])
+        
+        # crop
+        search_top = int(3*h/4)
+        search_bot = int(3*h/4 + 20)
+        mask[0:search_top, 0:w] = 0
+        mask[search_bot:h, 0:w] = 0
+
+        M = cv2.moments(mask)
+        # if there are any yellow pixels found
+        if M['m00'] > 0:
+            # determine the center of the yellow pixels in the image
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+
+            # visualize a red circle in our debugging window to indicate
+            # the center point of the yellow pixels
+            cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
+
+            err = w/2 - cx
+            k_p = 1.0 / 100.0
+            self.twist.linear.x = 0.1
+            self.twist.angular.z = k_p * err
+            self.cmd_vel_pub.publish(self.twist)
+        # show the debugging window
+        cv2.imshow("window", image)
+        cv2.waitKey(3)
+
     # GRANULAR GRIP MOVEMENT FUNCS
     def open_grip(self):
         open_grip = [0.016, 0.016]
@@ -329,17 +372,17 @@ class RobotMovement(object):
     def update_image(self, data):
         self.image = data
 
-    def goTo(self, destination):
+    # def goTo(self, destination):
 
-        r = rospy.Rate(3)
-        while not self.oriented:
-            self.orient(destination)
-            r.sleep
-        while (distance between pose and desintation > 0.3):
-            self.drive_along()
-            r.sleep
-        self.stop()
-        return
+    #     r = rospy.Rate(3)
+    #     while not self.oriented:
+    #         self.orient(destination)
+    #         r.sleep
+    #     while (distance between pose and desintation > 0.3):
+    #         self.drive_along()
+    #         r.sleep
+    #     self.stop()
+    #     return
 
     def drive_along(self): #follow the yellow line
          # converts the incoming ROS message to OpenCV format and HSV (hue, saturation, value)
@@ -394,7 +437,7 @@ class RobotMovement(object):
     '''
 
     def run(self):
-        
+        self.orient(5)
         print(self.action_sequence)
         '''
         r = rospy.Rate(10)
