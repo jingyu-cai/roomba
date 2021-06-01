@@ -54,6 +54,7 @@ add_message_files(
   QLearningReward.msg
   QMatrix.msg
   QMatrixRow.msg
+  DetectedObject.msg
 )
 
 ## Generate services in the 'srv' folder

@@ -8,6 +8,7 @@ from sensor_msgs.msg import Image
 import cv2
 import numpy as np
 from scipy.spatial import distance
+from roomba.msg import DetectedObject
 
 
 class Detector:
@@ -20,6 +21,7 @@ class Detector:
         # set up ROS / OpenCV bridge
         self.bridge = cv_bridge.CvBridge()    
         rospy.Subscriber('camera/rgb/image_raw',Image, self.image_callback)
+        self.object_pub = rospy.Publisher("/roomba/detector", DetectedObject, queue_size=10)
 
     
     def invalid_contour(self, contour):
@@ -59,9 +61,9 @@ class Detector:
                 continue
 
             approx = cv2.approxPolyDP(
-                contour, 0.01 * cv2.arcLength(contour, True), True)
+                contour, 0.001 * cv2.arcLength(contour, True), True)
             
-            #print(len(approx))
+            print(len(approx))
             
             
             if self.invalid_contour(contour):
@@ -86,11 +88,24 @@ class Detector:
 
         sorted_shapes = sorted(shapes, key=lambda i: i['distance_to_center'])
         
-        print(len(sorted_shapes[0]['approx']))
+        closest_shape = sorted_shapes[0]
+        num_vertices = len(closest_shape['approx'])
+
+        if num_vertices < 32:
+            print('dumbbell')
+            detected_object = DetectedObject()
+            detected_object.object = 'dumbbell'
+            self.object_pub.publish(detected_object)
+        else:
+            print('kettlebell')
+            detected_object = DetectedObject()
+            detected_object.object = 'kettlebell'
+            self.object_pub.publish(detected_object)
+
         # find contour of closest building to center and draw it (blue)
         center_building_contour = sorted_shapes[0]['contour']
         cv2.drawContours(img, [center_building_contour], 0, (255, 0, 0), 2)
-        print('writing')
+
         cv2.imwrite('processed.jpg', img)
         
         # displaying the image after drawing contours
@@ -107,7 +122,7 @@ class Detector:
         
 
     def run(self):
-        r = rospy.Rate(10)
+        r = rospy.Rate(5)
 
         while not rospy.is_shutdown():
             self.detect_shape()
