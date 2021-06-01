@@ -27,6 +27,7 @@ def read_objects_and_bins(path):
         reader = csv.reader(f)
         data = list(reader)
     
+    #set what each colored bin corresponds to which node in the graph
     for x in data:
         bins[x[0]] = int(x[1])
 
@@ -37,7 +38,7 @@ def generate_states(objects):
     ls_nodes = list(range(num_nodes))
     ls_complete = [ls_nodes]
 
-    #iterate through all objects 
+    #iterate through all objects and append their states to the cartesian product
     for i, obj in enumerate(objects):
         object_to_index[str(obj)] = i+1
         ls_complete.append([0,1])

@@ -29,12 +29,14 @@ class Reward(object):
         objects, bins = read_objects_and_bins(path_prefix + '/action_states/')
 
         #this will change with the map
+        #nonobstacles are used to determine when to reset the map
         self.num_nonobstacles = 0
         self.robot_location = 4
 
         #this is set later
         self.bin_nodes = {'red' : -1, 'blue' : -1, 'green' : -1}
 
+        #find the number of nonobstacles
         for obj in objects:
             if obj[0] != 'obstacle':
                 self.num_nonobstacles += 1
@@ -72,6 +74,7 @@ class Reward(object):
         reset_world = False
 
         #set reward according to the type of the object
+        #track that we have placed this object
         if obj == 'dumbbell':
             reward_amount = self.dumbbell_reward
             self.non_obstacles_inplace += 1
@@ -86,7 +89,7 @@ class Reward(object):
         else:
             raise Exception("Wrong object type")
 
-        #adjust with respect to distance that the robot has to travel
+        #adjust the reward with respect to distance that the robot has to travel
         reward_amount -= self.distance[node, self.bin_nodes[color]] + self.distance[node, self.robot_location]
         self.robot_location = self.bin_nodes[color]
 
@@ -95,7 +98,7 @@ class Reward(object):
             reset_world = True
 
 
-        # prepare reward msg
+        # prepare reward msg and publish
         reward_msg = QLearningReward()
         reward_msg.header = Header(stamp=rospy.Time.now())
         reward_msg.reward = reward_amount

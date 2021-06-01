@@ -10,6 +10,7 @@ def floyd_warshall(n, weight_mat):
     Next = np.zeros((n,n), dtype = int)
 
     #initialize shortest distance and path helper to decide what node is next in the path
+    #Next[i,j] denotes the next node to take in the path from i to j
     for i in range(n):
         for j in range(n):
             distance[i,j] = weight_mat[i,j]
@@ -32,6 +33,7 @@ def floyd_warshall(n, weight_mat):
                     Next[i,j] = Next[i,k]
 
     #find shortest path from Next by iterating on it
+    #i is the first node, Next[i,j] is the second, Next[Next[i,j],j] is the third etc.
     def find_shortest_path(i,j):
         if Next[i,j] == -1:
             return []
@@ -70,6 +72,7 @@ if __name__=="__main__":
     with open("shortest_paths.txt", "w") as file:
         file.write(str(paths))
 
+    #also save a readable version for debugging purposes
     with open("readable_shortest_paths.txt", "w") as file:
         for i in range(n):
             for j in range(n):
