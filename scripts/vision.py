@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from numpy.compat.py3k import contextlib_nullcontext
 import rospy
 import os
 import rospy,cv_bridge
@@ -19,6 +20,19 @@ class Detector:
         # set up ROS / OpenCV bridge
         self.bridge = cv_bridge.CvBridge()    
         rospy.Subscriber('camera/rgb/image_raw',Image, self.image_callback)
+
+    
+    def invalid_contour(self, contour):
+        x,y,w,h = cv2.boundingRect(contour)
+        contour_size=w*h
+        error_threshold = 1000
+        img_size = self.image.shape[0] * self.image.shape[1]
+        
+        if  abs(contour_size-img_size)<=error_threshold:
+            return True
+        else:
+            return False
+
 
     def detect_shape(self):
 
@@ -47,10 +61,13 @@ class Detector:
             approx = cv2.approxPolyDP(
                 contour, 0.01 * cv2.arcLength(contour, True), True)
             
-
-            cv2.drawContours(img, [contour], 0, (0, 50, 255), 2)
+            #print(len(approx))
             
+            
+            if self.invalid_contour(contour):
+                continue
         
+            cv2.drawContours(img, [contour], 0, (0, 50, 255), 2)
             # finding center point of shape
             M = cv2.moments(contour)
             if M['m00'] != 0.0:
@@ -64,12 +81,16 @@ class Detector:
             shapes.append({'contour': contour, 'center': contour_center, 
                             'approx': approx, 'distance_to_center': distance_to_center})
 
+        if len(shapes) == 0:
+            return 
+
         sorted_shapes = sorted(shapes, key=lambda i: i['distance_to_center'])
         
         print(len(sorted_shapes[0]['approx']))
         # find contour of closest building to center and draw it (blue)
         center_building_contour = sorted_shapes[0]['contour']
         cv2.drawContours(img, [center_building_contour], 0, (255, 0, 0), 2)
+        print('writing')
         cv2.imwrite('processed.jpg', img)
         
         # displaying the image after drawing contours
