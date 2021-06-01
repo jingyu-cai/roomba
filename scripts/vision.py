@@ -34,12 +34,10 @@ class Detector:
             threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         
-        image_center = np.asarray(gray.shape) / 2
-        image_center = image_center[:2]
+        h,w  = gray.shape
+        image_center = np.array([w/2, h/2])
         image_center = tuple(image_center.astype('int32'))
-        
-        print(gray.shape)
-        print(image_center)
+        cv2.circle(img, image_center, 3, (255, 255, 255), 2)
 
         shapes = []
         for i, contour in enumerate(contours):        
@@ -48,8 +46,6 @@ class Detector:
 
             approx = cv2.approxPolyDP(
                 contour, 0.01 * cv2.arcLength(contour, True), True)
-            
-            print(len(approx))
             
 
             cv2.drawContours(img, [contour], 0, (0, 50, 255), 2)
@@ -62,33 +58,19 @@ class Detector:
                 y = int(M['m01']/M['m00'])
                 contour_center = (x,y)
 
-            print(contour_center)
+
             cv2.circle(img, contour_center, 3, (100, 255, 0), 2)
             distance_to_center = distance.euclidean(image_center, contour_center)
-            shapes.append({'contour': contour, 'center': contour_center, 'distance_to_center': distance_to_center})
+            shapes.append({'contour': contour, 'center': contour_center, 
+                            'approx': approx, 'distance_to_center': distance_to_center})
 
         sorted_shapes = sorted(shapes, key=lambda i: i['distance_to_center'])
-        cv2.circle(img, image_center, 3, (255, 255, 255), 2)
+        
+        print(len(sorted_shapes[0]['approx']))
         # find contour of closest building to center and draw it (blue)
         center_building_contour = sorted_shapes[0]['contour']
         cv2.drawContours(img, [center_building_contour], 0, (255, 0, 0), 2)
         cv2.imwrite('processed.jpg', img)
-        
-            # putting shape name at center of each shape
-            # if len(approx) == 3:
-            #     print('Triangle')
-
-            # elif len(approx) == 4:
-            #     print('Quad')
-        
-            # elif len(approx) == 5:
-            #     print('pentagon')
-        
-            # elif len(approx) == 6:
-            #     print('hexa')
-        
-            # else:
-            #     print('circle')
         
         # displaying the image after drawing contours
         #cv2.imshow('shapes', img)
