@@ -2,6 +2,7 @@
 
 import rospy
 import numpy as np
+import cv2, cv_bridge
 import math
 import time
 import os
@@ -18,6 +19,11 @@ from action_states.generate_action_states import read_objects_and_bins
 
 # Path of directory on where this file is located
 path_prefix = os.path.dirname(__file__)
+
+def get_dist(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
 def get_yaw_from_pose(p):
     """ A helper function that takes in a Pose object (geometry_msgs) 
@@ -69,16 +75,17 @@ def get_target_angle(p1, p2):
 
 class RobotMovement(object):
     def __init__(self):
-
+        self.initialized = False
         # init node
         rospy.init_node('turtlebot3_movement')
 
         # This will be set to True once everything is set up
         self.initialized = False
 
+        # init computer vision
+        rospy.Subscriber("/camera/rgb/image_raw", Image, self.update_image)
         # init LIDAR
         rospy.Subscriber("scan", LaserScan, self.update_distance)
-        rospy.Subscriber('camera/rgb/image_raw', Image, self.update_image)
         # init odom
         rospy.Subscriber("/odom", Odometry, self.odom_callback)
         # init arm
@@ -152,12 +159,65 @@ class RobotMovement(object):
         self.node_sequence = []
         self.get_node_sequence()
 
-         # set up ROS / OpenCV bridge
+        # set up ROS / OpenCV bridge
         #ros uses its own image type, cv bridge nicer to work with
         self.bridge = cv_bridge.CvBridge()
+        self.image_data = None
 
         # We are good to go!
         self.initialized = True
+        
+
+    # GRANULAR GRIP MOVEMENT FUNCS
+    def open_grip(self):
+        open_grip = [0.016, 0.016]
+        self.move_grip.go(open_grip)
+    def close_grip(self):
+        close_grip = [0.010, 0.010]
+        self.move_grip.go(close_grip)
+
+    # GRANULAR ARM MOVEMENT FUNCS
+    def lower_arm(self):
+        lower_pos = [0, 0.7, 0, -0.65]
+        self.move_arm.go(lower_pos, wait=True)
+    def upper_arm(self):
+        upper_pos = [0, 0.05, -0.5, -0.65]
+        self.move_arm.go(upper_pos, wait=True)
+    def angle_arm(self):
+        angle_pos = [0.75, 0.05, -0.5, -0.65]
+        self.move_arm.go(angle_pos, wait=True)
+
+    # GRANULAR TWIST MOVEMENT FUNCS
+    def stop(self):
+        self.twist.linear.x = 0
+        self.twist.angular.z = 0
+        self.cmd_vel_pub.publish(self.twist)
+    def move_forward(self, secs=3):
+        self.twist.linear.x = 0.1
+        self.cmd_vel_pub.publish(self.twist)
+        time.sleep(secs)
+        self.stop()
+    def move_back(self, secs=3):
+        self.twist.linear.x = -0.1
+        self.cmd_vel_pub.publish(self.twist)
+        time.sleep(secs)
+        self.stop()
+
+    # COMPOUND MOVEMENTS
+    def pick_up(self):
+        """ Picks up dumbbell and angles out of camera POV
+        """
+        self.lower_arm()
+        self.close_grip()
+        self.upper_arm()
+        self.angle_arm()
+    def let_go(self):
+        """ Loosens grip and backs away from dumbbell.
+        """
+        self.upper_arm()
+        self.lower_arm()
+        self.open_grip()
+        self.move_back()
 
     def load_locations(self):
         """ Load locations of each node """
@@ -272,116 +332,174 @@ class RobotMovement(object):
         # Publish the velocities
         self.cmd_vel_pub.publish(self.twist)
 
-    # GRANULAR GRIP MOVEMENT FUNCS
-    def open_grip(self):
-        open_grip = [0.016, 0.016]
-        self.move_grip.go(open_grip)
-    def close_grip(self):
-        close_grip = [0.010, 0.010]
-        self.move_grip.go(close_grip)
+    # COMPUTER VISION
+    def follow_yellow_line(self):
+        """Drives forward indefinitely along yellow line"""
+        # image seup
+        yellow = {"lower":np.array([24,127,191]),"upper":np.array([34,255,255])}
+        image = self.bridge.imgmsg_to_cv2(self.image_data,desired_encoding='bgr8')
+        # boilerplate vars
+        h, w, d = image.shape
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, yellow["lower"], yellow["upper"])
+        # crop mask
+        search_top, search_bot = int(3*h/4), int(3*h/4 + 20)
+        mask[0:search_top, 0:w], mask[search_bot:h, 0:w] = 0, 0
+        M = cv2.moments(mask)
+        # if there are any yellow pixels found
+        if M['m00'] > 0:
+            # track center of yellow pixels
+            cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+            cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
 
-    # GRANULAR ARM MOVEMENT FUNCS
-    def lower_arm(self):
-        lower_pos = [0, 0.7, 0, -0.65]
-        self.move_arm.go(lower_pos, wait=True)
-    def upper_arm(self):
-        upper_pos = [0, 0.05, -0.5, -0.65]
-        self.move_arm.go(upper_pos, wait=True)
-    def angle_arm(self):
-        angle_pos = [0.75, 0.05, -0.5, -0.65]
-        self.move_arm.go(angle_pos, wait=True)
+            err, k_p = w/2 - cx, 1.0 / 100.0
+            self.twist.linear.x = 0.1
+            self.twist.angular.z = k_p * err
+            self.cmd_vel_pub.publish(self.twist)
+        else: # stops if it cannot see yellow pixels
+            self.stop()
+        # show the debugging window
+        cv2.imshow("window", image)
+        cv2.waitKey(3)
+    def approach_and_pickup_dumbbell(self, col="red"):
+        """Approaches and picks up dumbbell of given color"""
+        # color options
+        red = {"lower":np.array([0,190,160]),"upper":np.array([2,255,255])}
+        green = {"lower":np.array([60,60,60]),"upper":np.array([65,255,250])}
+        blue = {"lower":np.array([94,80,2]),"upper":np.array([126,255,255])}
+        select = {"red": red, "green": green, "blue": blue}
 
-    # GRANULAR TWIST MOVEMENT FUNCS
-    def stop(self):
-        self.twist.linear.x = 0
-        self.twist.angular.z = 0
-        self.cmd_vel_pub.publish(self.twist)
-    def move_forward(self, secs=3):
-        self.twist.linear.x = 0.1
-        self.cmd_vel_pub.publish(self.twist)
-        time.sleep(secs)
-        self.stop()
-    def move_back(self, secs=3):
-        self.twist.linear.x = -0.1
-        self.cmd_vel_pub.publish(self.twist)
-        time.sleep(secs)
-        self.stop()
+        image = self.bridge.imgmsg_to_cv2(self.image_data,desired_encoding='bgr8')
+        # boilerplate vars
+        h, w, d = image.shape
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, select[col]["lower"], select[col]["upper"])
+        M = cv2.moments(mask)
+        if M['m00'] > 0:
+            # determine the center of the colored pixels in the image
+            cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+            cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
 
-    # COMPOUND MOVEMENTS
-    def pick_up(self):
-        """ Picks up dumbbell and angles out of camera POV
-        """
-        self.lower_arm()
-        self.close_grip()
-        self.upper_arm()
-        self.angle_arm()
-    def let_go(self):
-        """ Loosens grip and backs away from dumbbell.
-        """
-        self.upper_arm()
-        self.lower_arm()
+            # print("Colored pixels were found in the image.")
+            print(f"Distance: {self.distance}, cy: {cy}")
+
+            # pick up dumbbell when close enough
+            dumbbell_close_enough = 270 < cy < 330 or 0.1 < self.distance < 0.2
+
+            if dumbbell_close_enough: 
+                print("Close to dumbbell! Now picking it up.")
+                self.twist.linear.x = 0
+                self.twist.angular.z = 0
+                self.cmd_vel_pub.publish(self.twist)
+                self.pick_up()
+                self.grabbed = True
+                return
+            else:
+                print("Out of range of dumbbells. Moving forward.")
+                # pid control variables!
+                k_p, err = .01, w/2 - cx
+                # alter trajectory accordingly
+                self.twist.linear.x = 0.02
+                self.twist.angular.z = k_p * err *.02
+                self.cmd_vel_pub.publish(self.twist)
+        else:
+            print("No colored pixels -- spinning in place.")
+            self.twist.linear.x = 0
+            self.twist.angular.z = .1
+            self.cmd_vel_pub.publish(self.twist)
+        # show the debugging window
+        cv2.imshow("window", image)
+        cv2.waitKey(3)
+
+    def approach_and_pickup_kettlebell(self, col="red"):
+        """Approaches and picks up kettlebell of given color"""
+        # color options
+        red = {"lower":np.array([0,190,160]),"upper":np.array([2,255,255])}
+        green = {"lower":np.array([60,60,60]),"upper":np.array([65,255,250])}
+        blue = {"lower":np.array([94,80,2]),"upper":np.array([126,255,255])}
+        select = {"red": red, "green": green, "blue": blue}
+
+        image = self.bridge.imgmsg_to_cv2(self.image_data,desired_encoding='bgr8')
+        # boilerplate vars
+        h, w, d = image.shape
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, select[col]["lower"], select[col]["upper"])
+        M = cv2.moments(mask)
+        if M['m00'] > 0:
+            # determine the center of the colored pixels in the image
+            cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+            cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
+
+            # print("Colored pixels were found in the image.")
+            print(f"Distance: {self.distance}, cx: {cx}, cy: {cy}")
+
+            # if blue_cond or green_cond or red_cond:
+            dumbbell_close_enough = 305 < cy < 330 or 0.1 < self.distance < 0.2
+
+            if dumbbell_close_enough: 
+                print("Close to dumbbell! Now picking it up.")
+                self.twist.linear.x = 0
+                self.twist.angular.z = 0
+                self.cmd_vel_pub.publish(self.twist)
+                self.pick_up()
+                self.grabbed = True
+                return
+            else:
+                print("Out of range of dumbbells. Moving forward.")
+                # pid control variables!
+                k_p, err = .01, w/4 - cx
+                # alter trajectory accordingly
+                self.twist.linear.x = 0.02
+                self.twist.angular.z = k_p * err *.02
+                self.cmd_vel_pub.publish(self.twist)
+        else:
+            print("No colored pixels -- spinning in place.")
+            self.twist.linear.x = 0
+            self.twist.angular.z = .1
+            self.cmd_vel_pub.publish(self.twist)
+        # show the debugging window
+        cv2.imshow("window", image)
+        cv2.waitKey(3)
+
+    def get_dist_from_node(self, dest):
+        """Gets current distance from node"""
+        p1 = (self.locations[dest][0], self.locations[dest][1])
+        p2 = (self.curr_pose.position.x, self.curr_pose.position.y)
+        return get_dist(p1, p2)
+
+    def move_to_node(self, dest):
+        print(f"Moving to node {dest}")
+        r = rospy.Rate(3)
+        self.oriented = False
+        while not self.oriented:
+            self.orient(dest)
+            r.sleep()
+        print("Finished orienting, now driving.")
+
         self.open_grip()
-        self.move_back()
+        self.lower_arm()
+        dist_from_node = float("inf")
+        while dist_from_node > 1:
+            self.follow_yellow_line()
+            dist_from_node = self.get_dist_from_node(dest)
+            print(f"Currently {dist_from_node} from node.")
+        print("Close enough to engage.")
+        self.stop()
+        self.grabbed = False
+        print("Now engaging in pick up")
+        while not self.grabbed:
+            #TODO: route appropriate color/object using a function
+            self.approach_and_pickup_dumbbell("blue")
+            # self.approach_and_pickup_kettlebell("blue")
+        print("Should have dumbbell")
+        return
 
     # STATE UPDATE FUNCS
     def update_distance(self, data):
         self.distance = data.ranges[0]
 
-    def update_image(self, data):
-        self.image = data
-
-    def goTo(self, destination):
-
-        r = rospy.Rate(3)
-        while not self.oriented:
-            self.orient(destination)
-            r.sleep
-
-        abs_loc = self.locations[destination]
-        abs_dist = abs(self.curr_pose.position.x - abs_loc[0]) + abs(self.curr_pose.position.y - abs_loc[1])
-        while (abs_dist > 0.5):
-            self.drive_along()
-            r.sleep
-        self.stop()
-        return
-
-    def drive_along(self): #follow the yellow line
-         # converts the incoming ROS message to OpenCV format and HSV (hue, saturation, value)
-        image = self.bridge.imgmsg_to_cv2(self.image,desired_encoding='bgr8')
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-        # TODO: define the upper and lower bounds for what should be considered 'yellow'
-        # h = 60 deg, s from 1/4 to 1, v 1  to 3/4
-        lower_yellow = np.array([10, 10, 10]) #TODO
-        upper_yellow = np.array([90, 255, 255]) #TODO
-        mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-
-        # this erases all pixels that aren't yellow
-        h, w, d = image.shape
-        search_top = int(3*h/4)
-        search_bot = int(3*h/4 + 20)
-        mask[0:search_top, 0:w] = 0
-        mask[search_bot:h, 0:w] = 0
-
-        # using moments() function, the center of the yellow pixels is determined
-        M = cv2.moments(mask)
-        # if there are any yellow pixels found
-        if M['m00'] > 0:
-            # center of the yellow pixels in the image
-            cx = int(M['m10']/M['m00'])
-            cy = int(M['m01']/M['m00'])
-
-            # a red circle is visualized in the debugging window to indicate
-            # the center point of the yellow pixels
-            cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
-
-            err = w/2 - cx
-            k_p = 0.01
-            self.twist.linear.x = 0.2
-            self.twist.angular.z = k_p * err
-            self.cmd_vel_pub.publish(self.twist)
-
-
+    def update_image(self, msg):
+        self.image_data = msg
 
     ''' stitched together version
     def run(self):
@@ -389,17 +507,18 @@ class RobotMovement(object):
             prePickup = seq[0]
             postPickup = seq[1]
             for n in prePickup:
-                self.goTo(n)
+                self.move_to_node(n)
             self.recognize_obj()
             self.pick_up()
             for m in postPickup:
-                self.goTo(m)
+                self.move_to_node(m)
             self.let_go()
     '''
 
     def run(self):
-        
-        print(self.goTo(2))
+        # self.oriented = False
+        self.move_to_node(2)
+        # print(self.action_sequence)
         '''
         r = rospy.Rate(10)
         
