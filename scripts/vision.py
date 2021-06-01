@@ -23,6 +23,36 @@ class Detector:
         rospy.Subscriber('camera/rgb/image_raw',Image, self.image_callback)
         self.object_pub = rospy.Publisher("/roomba/detector", DetectedObject, queue_size=10)
 
+
+    """
+    Gets the mask for cv2 to use to determine where the dumbell is.
+    The mask is based on the color and hsv values are used for that color.
+    """
+    def get_mask(self, color, hsv):
+
+        #red mask
+        lower_red = np.array([0,120,70])
+        upper_red = np.array([10,255,255])
+        mask1 = cv2.inRange(hsv, lower_red, upper_red)
+
+        lower_red = np.array([170,120,70])
+        upper_red = np.array([180,255,255])
+        mask2 = cv2.inRange(hsv,lower_red,upper_red)
+
+        
+        #green mask
+        lower_green = np.array([40,40,40])
+        upper_green = np.array([70,255,255])
+
+        mask3 = cv2.inRange(hsv, lower_green , upper_green)
+
+        #blue mask
+        lower_blue  = np.array([100, 150, 0])
+        upper_blue = np.array([140, 255, 255])
+
+        mask4 = cv2.inRange(hsv, lower_blue  , upper_blue)   
+
+        return mask1 + mask2 + mask3 + mask4  
     
     def invalid_contour(self, contour):
         x,y,w,h = cv2.boundingRect(contour)
@@ -43,8 +73,24 @@ class Detector:
 
         cv2.imwrite('temp.jpg', self.image)
         img = self.image
-    
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        mask = self.get_mask('red', hsv)
+        masked = cv2.bitwise_and(img,img,mask = mask)
+        # get (i, j) positions of all RGB pixels that are black (i.e. [0, 0, 0])
+        black_pixels = np.where(
+            (masked[:, :, 0] == 0) & 
+            (masked[:, :, 1] == 0) & 
+            (masked[:, :, 2] == 0)
+        )
+
+        # set those pixels to white
+        masked[black_pixels] = [255, 255, 255]
+
+        
+        cv2.imwrite('masked.jpg', masked)
+
+        gray = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
         _, threshold = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
         contours, _ = cv2.findContours(
             threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -61,27 +107,27 @@ class Detector:
                 continue
 
             approx = cv2.approxPolyDP(
-                contour, 0.001 * cv2.arcLength(contour, True), True)
+                contour, 0.0001 * cv2.arcLength(contour, True), True)
+
             
             print(len(approx))
             
             
             if self.invalid_contour(contour):
+                #print('invalid contour')
                 continue
         
             cv2.drawContours(img, [contour], 0, (0, 50, 255), 2)
             # finding center point of shape
             M = cv2.moments(contour)
-            if M['m00'] != 0.0:
+            if M['m00'] > 0.0:
                 x = int(M['m10']/M['m00'])
                 y = int(M['m01']/M['m00'])
                 contour_center = (x,y)
-
-
-            cv2.circle(img, contour_center, 3, (100, 255, 0), 2)
-            distance_to_center = distance.euclidean(image_center, contour_center)
-            shapes.append({'contour': contour, 'center': contour_center, 
-                            'approx': approx, 'distance_to_center': distance_to_center})
+                cv2.circle(img, contour_center, 3, (100, 255, 0), 2)
+                distance_to_center = distance.euclidean(image_center, contour_center)
+                shapes.append({'contour': contour, 'center': contour_center, 
+                                    'approx': approx, 'distance_to_center': distance_to_center})
 
         if len(shapes) == 0:
             return 
@@ -91,7 +137,7 @@ class Detector:
         closest_shape = sorted_shapes[0]
         num_vertices = len(closest_shape['approx'])
 
-        if num_vertices < 32:
+        if num_vertices < 170:
             print('dumbbell')
             detected_object = DetectedObject()
             detected_object.object = 'dumbbell'
