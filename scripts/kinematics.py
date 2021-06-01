@@ -8,6 +8,7 @@ import time
 import os
 
 import moveit_commander
+import cv2, cv_bridge
 from geometry_msgs.msg import Twist, Vector3, Pose
 from sensor_msgs.msg import Image, LaserScan
 from nav_msgs.msg import Odometry
@@ -484,7 +485,6 @@ class RobotMovement(object):
             print(f"Currently {dist_from_node} from node.")
         print("Close enough to engage.")
         self.stop()
-
         self.grabbed = False
         print("Now engaging in pick up")
         while not self.grabbed:
