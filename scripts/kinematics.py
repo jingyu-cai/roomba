@@ -74,7 +74,7 @@ def get_target_angle(p1, p2):
 
 class RobotMovement(object):
     def __init__(self):
-
+        self.initialized = False
         # init node
         rospy.init_node('turtlebot3_movement')
 
@@ -383,7 +383,7 @@ class RobotMovement(object):
             print(f"Distance: {self.distance}, cy: {cy}")
 
             # pick up dumbbell when close enough
-            dumbbell_close_enough = 305 < cy < 330 or 0.1 < self.distance < 0.2
+            dumbbell_close_enough = 270 < cy < 330 or 0.1 < self.distance < 0.2
 
             if dumbbell_close_enough: 
                 print("Close to dumbbell! Now picking it up.")
@@ -474,18 +474,23 @@ class RobotMovement(object):
             self.orient(dest)
             r.sleep()
         print("Finished orienting, now driving.")
+
+        self.open_grip()
         self.lower_arm()
-        calc_dist = float("inf")
-        while calc_dist > 1:
+        dist_from_node = float("inf")
+        while dist_from_node > 1:
             self.follow_yellow_line()
-            calc_dist = self.get_dist_from_node(dest)
-            print(f"Currently {calc_dist} from node.")
+            dist_from_node = self.get_dist_from_node(dest)
+            print(f"Currently {dist_from_node} from node.")
+        print("Close enough to engage.")
         self.stop()
-        print("You have arrived.")
+
         self.grabbed = False
-        print("Now engaging in drive")
+        print("Now engaging in pick up")
         while not self.grabbed:
-            self.approach_and_pickup_kettlebell("blue")
+            #TODO: route appropriate color/object using a function
+            self.approach_and_pickup_dumbbell("blue")
+            # self.approach_and_pickup_kettlebell("blue")
         print("Should have dumbbell")
         return
 
