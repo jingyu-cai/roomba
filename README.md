@@ -93,9 +93,12 @@ The code for perception is located in `vision.py` and it is a rosnode that publi
 - `run()` runs the rosnode. 
 
 Below is an example of the original image, preprocessed image, and the shape detected image:
-![](original.jpg)
-![](masked.jpg)
-![](processed.jpg)
+
+<p float="left">
+  <img src="./media/original.jpg" width="100" />
+  <img src="/media/masked.jpg" width="100" /> 
+  <img src="/media/processed.jpg" width="100" />
+</p>
 
 #### Kinematics
 
