@@ -50,15 +50,20 @@ We needed to implement an optimal path finding algorithm for both the calculatio
 
 - **Defining the States and the Actions:**
 
-Our definition of a state involved both the location of the robot and the location of each object. The location of the robot was encoded as the node it is currently at in the graph and the locations of each object was encoded as whether or not they are placed in the correct bin (0 or 1). So, for instance a state (4,1,0,1) would indicate that the robot is at node 4, the first object is correctly placed in its bin etc. 
+Our definition of a state involved both the location of the robot and the location of each object. The location of the robot was encoded as the node it is currently at in the graph and the locations of each object was encoded as whether or not they are placed in the correct bin (0 or 1). So, for instance a state (4,1,0,1) would indicate that the robot is at node 4, the first object is correctly placed in its bin etc. The reason why we include the robot's location in the states is that we need the robot's location to calculate the distance it has to travel to pick up an object, which affects the reward.
 
-The code for defining and generating the states, and the state action matrix is in `generate_action_states.py`. The function `read_objects_and_bins()` reads the user input object and bin information in the corresponding csv files to be used to generate the state-action matrix. The function `generate_states()` then generates all possible states using the cartesian product of each object state and robot location. The function `generate_action_matrix()` then generates the state-action matrix by considering what action takes us to which state based on the object and current state information. The generated states and state-action matrix are then saved to `states.csv` and `action_matrix.csv`. 
+- The code for defining and generating the states, and the state action matrix is in `generate_action_states.py` in the action_states folder. The actions and states are generated based on the information that the user provides about the representation of the map as a graph and generalizes to any map.   
+- The function `read_objects_and_bins()` reads the user input object and bin information in the corresponding csv files to be used to generate the state-action matrix. These files contain the type, color and the location of each object and bin. 
+- The function `generate_states()` then generates all possible states using the cartesian product of each object state and robot location. If there are n nodes and m objects in the map, then the number of states is n*2^m. 
+- The function `generate_action_matrix()` then generates the state-action matrix by considering what action takes us to which state based on the object and current state information. The generated states and state-action matrix are then saved to `states.csv` and `action_matrix.csv`. 
 
 - **The Reward Function:**
 
-The reward function that we used for Q-Learning considers both the distance the robot has to travel to put an object to a bin and the reward associated with that object type. The dumbbells have 100 points, and the balls have 50 points of reward each. The distance that the robot has to travel is discounted from the published reward to encourage picking up closer objects. 
+The reward function that we used for Q-Learning considers both the distance the robot has to travel to put an object to a bin and the reward associated with that object type. The dumbbells have 100 points, and the balls have 50 points of reward each. The distance that the robot has to travel is discounted from the published reward to encourage picking up closer objects. So, for instance if the robot has to travel 10 meters to put a dumbell in its place, then the reward is 100 - 10 = 90. 
 
-The code for the reward publication is in `reward.py` and uses the custom message `QLearningReward.msg`. Each time a robot action is published, `send_reward()` is called, which publishes the reward that is described above. The distances are read from `distances.npy`, and the world is reset when all objects are moved into place. 
+- The code for the reward publication is in `reward.py` and uses the custom message `QLearningReward.msg`.
+- `__init__()` initializes reads the object and bin information from the corresponding csv files and initializes the rewards. It also reads the distances between each pair of nodes precomputed by the Floyd-Warshall algorithm and stored in `distances.npy`.
+- Each time a robot action is published, `send_reward()` is called, which calculates and publishes the reward that is described above. And the world is reset when all objects are moved into place. 
 
 - **Q-Learning Algorithm:**
 
@@ -86,6 +91,11 @@ The code for perception is located in `vision.py` and it is a rosnode that publi
 - `detect_shape()` is the main function we use to determine the shape detected in the image. It first preprocesses the image, by getting the masks and getting rid of the black pixels. Then runs the shape detection algorithm described previously. The invalid contours are eliminated, and the type of the closest shape to the center is published. 
 - `image_callback()` takes the camera feed and sets `self.image` to that. 
 - `run()` runs the rosnode. 
+
+Below is an example of the original image, preprocessed image, and the shape detected image:
+![](original.jpg)
+![](masked.jpg)
+![](processed.jpg)
 
 #### Kinematics
 
