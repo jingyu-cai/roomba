@@ -25,7 +25,7 @@ class Detector:
 
 
     #Get a mask to get rid of any colors other than red, blue, and green.
-    def get_mask(self, color, hsv):
+    def get_mask(self, hsv):
 
         #red mask
         lower_red = np.array([0,120,70])
@@ -78,7 +78,7 @@ class Detector:
 
         #mask out irrelevant colors
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        mask = self.get_mask('red', hsv)
+        mask = self.get_mask(hsv)
         masked = cv2.bitwise_and(img,img,mask = mask)
         # get the positions of all pixels that are black (i.e. [0, 0, 0])
         black_pixels = np.where(
