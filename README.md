@@ -95,9 +95,9 @@ The code for perception is located in `vision.py` and it is a rosnode that publi
 Below is an example of the original image, preprocessed image, and the shape detected image:
 
 <p float="left">
-  <img src="./media/original.jpg" width="100" />
-  <img src="/media/masked.jpg" width="100" /> 
-  <img src="/media/processed.jpg" width="100" />
+  <img src="./media/original.jpg" width="200" />
+  <img src="/media/masked.jpg" width="200" /> 
+  <img src="/media/processed.jpg" width="200" />
 </p>
 
 #### Kinematics
