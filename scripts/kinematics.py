@@ -89,6 +89,9 @@ class RobotMovement(object):
         rospy.Subscriber("scan", LaserScan, self.update_distance)
         # init odom
         rospy.Subscriber("/odom", Odometry, self.odom_callback)
+        # init detector
+        rospy.Subscriber("/roomba/detector", DetectedObject, self.object_detector_callback)
+
         # init arm
         self.move_arm  = moveit_commander.MoveGroupCommander("arm")
         self.move_grip = moveit_commander.MoveGroupCommander("gripper")
@@ -379,6 +382,14 @@ class RobotMovement(object):
 
         # Save robot pose to self.curr_pose
         self.curr_pose = data.pose.pose
+
+    def object_detector_callback(self, data):
+        """ Determine what object perception node detects"""
+
+        if not self.initialized:
+            return 
+        
+        self.curr_obj = data.object
 
     def orient(self, p):
         """ Given a node number, orient robot to face that node """
