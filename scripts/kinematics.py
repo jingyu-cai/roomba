@@ -142,6 +142,7 @@ class RobotMovement(object):
         # Set up pose and orientation variables
         self.curr_pose = Pose()
         self.oriented = False
+        self.pick_up_now = False
 
         # Set up kp for proportional control
         self.kp = 0.2
@@ -591,24 +592,15 @@ class RobotMovement(object):
     def update_image(self, msg):
         self.image_data = msg
 
-    ''' stitched together version
-    def run(self):
-        for seq in self.node_sequence:
-            prePickup = seq[0]
-            postPickup = seq[1]
-            for n in prePickup:
-                self.move_to_node(n)
-            self.recognize_obj()
-            self.pick_up()
-            for m in postPickup:
-                self.move_to_node(m)
-            self.let_go()
-    '''
+    
 
     def object_action_router(self, dest):
         """Decides what action each object"""
         obj, col = self.curr_obj, self.curr_obj_col
         print("Now deciding action to perform")
+
+        if not self.pick_up_now:
+            return
 
         dist_from_node = float("inf")
         if obj == None:
@@ -647,6 +639,21 @@ class RobotMovement(object):
 
 
     def run(self):
+        '''
+        for seq in self.node_sequence:
+            prePickup = seq[0]
+            postPickup = seq[1]
+            for n in prePickup[:-1]:
+                self.move_to_node(n)
+            self.pick_up_now = True
+            self.move_to_node(prePickup[-1])
+            self.pick_up_now = False
+            for m in postPickup[:-1]:
+                self.move_to_node(m)
+            self.drop_off = True
+            self.move_to_node([postPickup[-1]])
+    '''
+
         while True:
             # self.curr_obj = "kettlebell"
             # self.move_to_node(7)
@@ -669,14 +676,8 @@ class RobotMovement(object):
         # self.move_to_node(1)
         # self.move_to_node(7)
         # print(self.action_sequence)
-        '''
-        r = rospy.Rate(10)
         
-        while not rospy.is_shutdown():
-            self.orient(5)
-            print(self.oriented)
-            r.sleep()
-
+        '''
         while True:
             # self.open_grip()
             self.open_grip()
