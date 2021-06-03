@@ -121,7 +121,7 @@ The code for orientation is located in `kinematics.py`:
 - `get_target_angle()`: This calculates the amount of angle the robot needs to turn to face the node, which is done by using trigonometry to first find the raw/absolute angle between the robot and the node and then takes into account the relative position of the node to the robot to compute the target angle.
 - `orient()`: This function generalizes the orient action of the robot to make it able to turn to any node based on its current position (which is fetched by the pose subscriber in `odom_callback()`) and the position of the node (which is read from `locations.csv` into the script as `self.locations`). Then, by using the two helper functions above, we calculate the difference between the robot’s yaw and the target angle and apply proportional control to turn the robot until it faces the node within a few degrees. Once the robot is within this window, we signal to move to the line follower phase. 
 
-- **Kinematics For Movement and Handling Objects:** 
+- **Kinematics for Movement and Handling Objects:** 
 
 The robot is fine-tuned to move around the map and use its arm and gripper to handle different objects, which is tightly integrated with perception to execute the action sequence.
 
