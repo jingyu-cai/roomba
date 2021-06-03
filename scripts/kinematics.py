@@ -596,13 +596,15 @@ class RobotMovement(object):
             """Side effect: sets object and object color props"""
             for obj,col,node in self.action_sequence:
                 if node == dest:
-                    self.curr_obj = obj
+                    # self.curr_obj = obj
                     self.curr_obj_col = col
                     break
+                '''
                 elif node in [3,5]:
                     self.curr_obj = "obstacle"
                     self.curr_obj_col = None
                     break
+                '''
             else:
                 self.curr_obj = None
                 self.curr_obj_col = None

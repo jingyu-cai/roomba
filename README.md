@@ -12,6 +12,7 @@ Karhan Kayan, Jingyu Cai, Zack Wang, Yoon Jeong
 ### Robot perception & movement
     $ roscore
     $ roslaunch roomba room.launch
+    $ rosrun roomba vision.py
     $ rosrun roomba kinematics.py
 
 ## Project Description
