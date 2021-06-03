@@ -157,9 +157,12 @@ class RobotMovement(object):
         distance, self.shortest_paths = floyd_warshall(n, weight_mat)
 
         # current object and color of object
-        self.curr_obj = "dumbbell"
-        self.curr_obj_col = "red"
+        self.curr_obj = None
+        self.curr_obj_col = None
+
+        # status of robot
         self.drop_off = False
+        self.going_to_pick_up = False
 
         # set up action sequence
         self.action_sequence = []
@@ -263,6 +266,9 @@ class RobotMovement(object):
         if not self.initialized:
             return 
         
+        if not self.going_to_pick_up:
+            return
+
         self.curr_obj = data.object
         print(f"The object is {data.object}.")
 
@@ -445,7 +451,8 @@ class RobotMovement(object):
             criteria = 0.9
         elif obj == None:
             print("Moving to node.")
-            criteria = 0.42
+            # criteria = 0.42
+            criteria = 0.5
         elif obj == "obstacle":
             print("Moving to node with obstacle")
             criteria = 0.5
@@ -463,10 +470,11 @@ class RobotMovement(object):
         if self.drop_off:
             self.drop_off_object(dest)
             return
-        if obj == None: return
-        if obj == "obstacle":
+        print(self.distance)
+        if (not self.going_to_pick_up) and (self.distance < 0.5):
             self.go_around()
             return
+        if obj == None: return
 
         self.finished_obj_action = False
         while not self.finished_obj_action:
@@ -476,7 +484,7 @@ class RobotMovement(object):
                 self.approach_and_pickup_kettlebell(col)
             else:
                 print(f"Unknown object: {obj}")
-                raise Exception("Unknown object")
+                # raise Exception("Unknown object")
 
     def approach_and_pickup_dumbbell(self, col="red"):
         """Approaches and picks up dumbbell of given color"""
@@ -511,6 +519,7 @@ class RobotMovement(object):
                 self.cmd_vel_pub.publish(self.twist)
                 self.pick_up()
                 self.finished_obj_action = True
+                self.going_to_pick_up = False
                 return
             else:
                 print("Out of range of dumbbells. Moving forward.")
@@ -561,6 +570,7 @@ class RobotMovement(object):
                 self.cmd_vel_pub.publish(self.twist)
                 self.pick_up()
                 self.finished_obj_action = True
+                self.going_to_pick_up = False
                 return
             else:
                 print("Out of range of kettles. Moving forward.")
@@ -598,6 +608,7 @@ class RobotMovement(object):
                 if node == dest:
                     # self.curr_obj = obj
                     self.curr_obj_col = col
+                    self.going_to_pick_up = True
                     break
                 '''
                 elif node in [3,5]:
@@ -620,6 +631,8 @@ class RobotMovement(object):
                 else: self.drop_off = False
                 # execute!
                 set_obj_at_node(dest)
+                print(self.going_to_pick_up)
+                print(self.curr_obj)
                 self.move_to_node(dest)
 
         
