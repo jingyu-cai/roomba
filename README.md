@@ -103,6 +103,13 @@ Below is an example of the original image, preprocessed image, and the shape det
   <img src="/media/processed.jpg" width="250" />
 </p>
 
+- **Perception Integration with Kinematics:**
+
+The robot uses perception from its camera, which integrates with kinematics to follow the yellow lines of the graph and use computer vision to identify the objects for pick-up actions and the colored zones drop-off actions.
+
+The code for perception integration is located in `kinematics.py`:
+- One layer of abstraction above the kinematics components were the functions `follow_yellow_line`, `approach_and_pickup_dumbbell`, `approach_and_pickup_kettlebell`, `drop_off_object` which each use computer vision to perform their operations. `follow_yellow_line` uses virtually the same code as in the Lecture code it was taken from with PID as its main feature. `approach_and_pickup_*` functions use PID to hone in on the handle of the object, and then perform the `pick_up` function described previously. The `drop_off_object` uses a mixture of computer vision and PID to get close to the drop off zone, then drops the object using the `let_go` function.
+
 #### Kinematics
 
 - **Orienting the Robot Towards a Node:** 
@@ -113,6 +120,16 @@ The code for orientation is located in `kinematics.py`:
 - `get_yaw_from_pose()`: This takes in a `Pose()` objects and converts the orientation values into the yaw of the robot
 - `get_target_angle()`: This calculates the amount of angle the robot needs to turn to face the node, which is done by using trigonometry to first find the raw/absolute angle between the robot and the node and then takes into account the relative position of the node to the robot to compute the target angle.
 - `orient()`: This function generalizes the orient action of the robot to make it able to turn to any node based on its current position (which is fetched by the pose subscriber in `odom_callback()`) and the position of the node (which is read from `locations.csv` into the script as `self.locations`). Then, by using the two helper functions above, we calculate the difference between the robot’s yaw and the target angle and apply proportional control to turn the robot until it faces the node within a few degrees. Once the robot is within this window, we signal to move to the line follower phase. 
+
+- **Kinematics For Movement and Handling Objects:** 
+
+The robot is fine-tuned to move around the map and use its arm and gripper to handle different objects, which is tightly integrated with perception to execute the action sequence.
+
+The code for kinematics is located in `kinematics.py`:
+- Granular movements functions `stop`, `move_forward`, `move_back`, `turn_left`, `turn_right` were used to control the Twist of the robot. This aided greatly by minimizing the friction that often comes with having to write repeated lines of code to move the robot.
+- Granular movements for arm motion such as `lower_arm`, `upper_arm`, and `angle_arm` were responsible for the ready position, the raised position, and the raised-angled position (so the dumbbell would be out of the way of the camera).
+- The above granular movements were then combined to create complex operations such as `pick_up`, `let_go`, `go_around`. These each performed the compound movements required to pick up and let go of objects, go around obstacles, and drop off the object.
+- The `move_to_node` is further a layer of abstraction above these, as it uses the `object_action_router` to determine which of the above object control functions to use. The `follow_yellow_line` function is used throughout to move from node to node. Aside from these functions, the `move_to_node` also integrates the `orient` function to be in the correct angle to move towards the next node.
 
 ## Challenges, Future Work, and Takeaways
 
