@@ -176,7 +176,95 @@ class RobotMovement(object):
 
         # We are good to go!
         self.initialized = True
+
+    # INIT FUNCS
+    def load_locations(self):
+        """ Load locations of each node """
         
+        # Store the file into self.locations
+        self.locations = np.loadtxt(path_prefix + "/locations.csv", delimiter = ',')
+    def load_q_matrix(self):
+        """ Load the trained Q-matrix csv file """
+
+        # Store the file into self.q_matrix
+        self.q_matrix = np.loadtxt(path_prefix + "/q_matrix.csv", delimiter = ',')
+    def get_action_sequence(self):
+        """ Get the sequence of actions for the robot to move the dumbbells
+        to the correct blocks based on the trained Q-matrix """
+        
+        # Start at the origin
+        curr_state = self.origin_state
+
+        # Loop through a specific amount of times to get the action sequence
+        for i in range(self.num_nonobstacles):
+
+            # Get row in matrix and select the best action to take with the
+            #   maximum Q-value
+            q_matrix_row = self.q_matrix[curr_state]
+            selected_action = np.where(q_matrix_row == max(q_matrix_row))[0][0]
+
+            # Store the object, color, and node for the action as a tuple
+            obj = self.actions[selected_action]["object"]
+            clr = self.actions[selected_action]["color"]
+            node = self.actions[selected_action]["node"]
+            self.action_sequence.append((obj, clr, node))
+
+            # Update the current state
+            curr_state = np.where(self.action_matrix[curr_state] == selected_action)[0][0]
+                
+        print(self.action_sequence)
+    def get_node_sequence(self):
+        """ Get the sequence of nodes for each action from the action sequence
+        with the help of shortest_paths.txt, e.g. the first index is the sequences
+        [[4, 1], [1, 4, 5, 6]], meaning the robot has to go from node 4 -> 1 to
+        pick up the red dumbbell, and go from node 1 -> 4 -> 5 -> 6 to place the
+        red dumbbell at the red bin  """
+
+        # First we start at the origin node
+        curr_node = self.origin_node
+
+        for i in range(len(self.action_sequence)):
+            # Define an array to hold the pick up object + place object node seqs
+            one_sequence = []
+
+            # Find the node of interest and append that shortest path from curr_node
+            next_node = self.action_sequence[i][2]
+            one_sequence.append(self.shortest_paths[curr_node][next_node])
+
+            # Find where the object belong to and append that shortest path from next_node
+            bin_node = self.bins[self.action_sequence[i][1]]
+            one_sequence.append(self.shortest_paths[next_node][bin_node])
+
+            # Append the sequence to node sequence and update curr_node to bin_node
+            self.node_sequence.append(one_sequence)
+            curr_node = bin_node
+        
+        print("node seq", self.node_sequence)
+
+    # STATE UPDATE FUNCS
+    def update_distance(self, data):
+        self.distance = data.ranges[0]
+    def update_image(self, msg):
+        self.image_data = msg
+
+    # CALLBACK FUNCS
+    def odom_callback(self, data):
+        """ Save the odometry data """
+
+        # Do nothing if not initialized
+        if not self.initialized:
+            return
+
+        # Save robot pose to self.curr_pose
+        self.curr_pose = data.pose.pose
+    def object_detector_callback(self, data):
+        """ Determine what object perception node detects"""
+
+        if not self.initialized:
+            return 
+        
+        self.curr_obj = data.object
+        print(f"The object is {data.object}.")
 
     # GRANULAR GRIP MOVEMENT FUNCS
     def open_grip(self):
@@ -247,151 +335,15 @@ class RobotMovement(object):
         self.turn_left()
         self.move_forward(3)
         self.turn_right()
-        self.move_forward(3)
+        self.move_forward(5)
         self.turn_right()
         self.move_forward(3)
         self.turn_left()
         self.move_forward(3)
         self.finished_obj_action = True
         print("Finished go_around")
-    def drop_off_object(self):
-        col = self.curr_obj_col
-        # color options
-        red = {"lower":np.array([0,190,160]),"upper":np.array([2,255,255])}
-        green = {"lower":np.array([60,60,60]),"upper":np.array([65,255,250])}
-        blue = {"lower":np.array([94,80,2]),"upper":np.array([126,255,255])}
-        select = {"red": red, "green": green, "blue": blue}
-        
-        dropped = False
-        while not dropped:
-            image = self.bridge.imgmsg_to_cv2(self.image_data,desired_encoding='bgr8')
-            # boilerplate vars
-            h, w, d = image.shape
-            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv, select[col]["lower"], select[col]["upper"])
-            M = cv2.moments(mask)
-            if M['m00'] > 0:
-                # determine the center of the colored pixels in the image
-                cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
-                cv2.circle(image, (cx, cy), 20, (255,255,255), -1)
 
-                # print("Colored pixels were found in the image.")
-                print(f"Distance: {self.distance}, cy: {cy}")
-
-                # pick up dumbbell when close enough
-                dumbbell_close_enough = cy > 400
-
-                if dumbbell_close_enough: 
-                    print("Close to dropoff! Now dropping.")
-                    self.twist.linear.x = 0
-                    self.twist.angular.z = 0
-                    self.cmd_vel_pub.publish(self.twist)
-                    self.let_go()
-                    self.finished_obj_action = True
-                    return
-                else:
-                    print("Out of range of dropoff. Moving forward.")
-                    # pid control variables!
-                    k_p, err = .01, w/2 - cx
-                    # alter trajectory accordingly
-                    self.twist.linear.x = 0.1
-                    self.twist.angular.z = k_p * err *.02
-                    self.cmd_vel_pub.publish(self.twist)
-            else:
-                print("No colored pixels -- spinning in place.")
-                self.twist.linear.x = 0
-                self.twist.angular.z = .1
-                self.cmd_vel_pub.publish(self.twist)
-            # show the debugging window
-            cv2.imshow("window", image)
-            cv2.waitKey(3)
-            # self.let_go()
-            print("dropped off")
-
-    def load_locations(self):
-        """ Load locations of each node """
-        
-        # Store the file into self.locations
-        self.locations = np.loadtxt(path_prefix + "/locations.csv", delimiter = ',')
-
-    def load_q_matrix(self):
-        """ Load the trained Q-matrix csv file """
-
-        # Store the file into self.q_matrix
-        self.q_matrix = np.loadtxt(path_prefix + "/q_matrix.csv", delimiter = ',')
-
-    def get_action_sequence(self):
-        """ Get the sequence of actions for the robot to move the dumbbells
-        to the correct blocks based on the trained Q-matrix """
-        
-        # Start at the origin
-        curr_state = self.origin_state
-
-        # Loop through a specific amount of times to get the action sequence
-        for i in range(self.num_nonobstacles):
-
-            # Get row in matrix and select the best action to take with the
-            #   maximum Q-value
-            q_matrix_row = self.q_matrix[curr_state]
-            selected_action = np.where(q_matrix_row == max(q_matrix_row))[0][0]
-
-            # Store the object, color, and node for the action as a tuple
-            obj = self.actions[selected_action]["object"]
-            clr = self.actions[selected_action]["color"]
-            node = self.actions[selected_action]["node"]
-            self.action_sequence.append((obj, clr, node))
-
-            # Update the current state
-            curr_state = np.where(self.action_matrix[curr_state] == selected_action)[0][0]
-                
-        print(self.action_sequence)
-
-    def get_node_sequence(self):
-        """ Get the sequence of nodes for each action from the action sequence
-        with the help of shortest_paths.txt, e.g. the first index is the sequences
-        [[4, 1], [1, 4, 5, 6]], meaning the robot has to go from node 4 -> 1 to
-        pick up the red dumbbell, and go from node 1 -> 4 -> 5 -> 6 to place the
-        red dumbbell at the red bin  """
-
-        # First we start at the origin node
-        curr_node = self.origin_node
-
-        for i in range(len(self.action_sequence)):
-            # Define an array to hold the pick up object + place object node seqs
-            one_sequence = []
-
-            # Find the node of interest and append that shortest path from curr_node
-            next_node = self.action_sequence[i][2]
-            one_sequence.append(self.shortest_paths[curr_node][next_node])
-
-            # Find where the object belong to and append that shortest path from next_node
-            bin_node = self.bins[self.action_sequence[i][1]]
-            one_sequence.append(self.shortest_paths[next_node][bin_node])
-
-            # Append the sequence to node sequence and update curr_node to bin_node
-            self.node_sequence.append(one_sequence)
-            curr_node = bin_node
-        
-        print("node seq", self.node_sequence)
-
-    def odom_callback(self, data):
-        """ Save the odometry data """
-
-        # Do nothing if not initialized
-        if not self.initialized:
-            return
-
-        # Save robot pose to self.curr_pose
-        self.curr_pose = data.pose.pose
-
-    def object_detector_callback(self, data):
-        """ Determine what object perception node detects"""
-
-        if not self.initialized:
-            return 
-        
-        self.curr_obj = data.object
-
+    # COMPOUND-COMPLEX MOVEMENTS
     def orient(self, p):
         """ Given a node number, orient robot to face that node """
 
@@ -428,8 +380,6 @@ class RobotMovement(object):
 
         # Publish the velocities
         self.cmd_vel_pub.publish(self.twist)
-
-    # COMPUTER VISION
     def follow_yellow_line(self):
         """Drives forward indefinitely along yellow line"""
         # image seup
@@ -454,10 +404,80 @@ class RobotMovement(object):
             self.twist.angular.z = k_p * err
             self.cmd_vel_pub.publish(self.twist)
         else: # stops if it cannot see yellow pixels
-            self.stop()
+            self.twist.linear.x = 0
+            self.twist.angular.z = 0.2
+            self.cmd_vel_pub.publish(self.twist)
+            print("cant see yellow line here!")
+            # self.stop()
         # show the debugging window
         cv2.imshow("window", image)
         cv2.waitKey(3)
+    def get_dist_from_node(self, dest):
+        """Gets current distance from node"""
+        p1 = (self.locations[dest][0], self.locations[dest][1])
+        p2 = (self.curr_pose.position.x, self.curr_pose.position.y)
+        return get_dist(p1, p2)
+    def move_to_node(self, dest):
+        print(f"Moving to node {dest}")
+        r = rospy.Rate(3)
+        self.oriented = False
+        while not self.oriented:
+            self.orient(dest)
+            r.sleep()
+
+        print("Finished orienting, now driving.")
+        self.stop()
+        self.object_action_router(dest)
+        return
+
+    # OBJECT HANDLER FUNCS
+    def object_action_router(self, dest):
+        """Decides what action each object"""
+        obj, col = self.curr_obj, self.curr_obj_col
+        print("Now deciding action to perform")
+
+        # if not self.pick_up_now: return
+
+        dist_from_node = lambda: self.get_dist_from_node(dest)
+        
+        # Different criteria depending on what's on the node.
+        if self.drop_off:
+            criteria = 0.9
+        elif obj == None:
+            print("Moving to node.")
+            criteria = 0.42
+        elif obj == "obstacle":
+            print("Moving to node with obstacle")
+            criteria = 0.5
+        elif obj == "dumbbell" or obj == "kettlebell":
+            print("Moving to node with object to grab")
+            criteria = .9
+            self.open_grip()
+            self.lower_arm()
+        
+        # Move along the yellow line to reach node
+        while dist_from_node() > criteria:
+            print(f"Currently {dist_from_node()} from node.")
+            self.follow_yellow_line()
+
+        if self.drop_off:
+            self.drop_off_object(dest)
+            return
+        if obj == None: return
+        if obj == "obstacle":
+            self.go_around()
+            return
+
+        self.finished_obj_action = False
+        while not self.finished_obj_action:
+            if obj == "dumbbell":
+                self.approach_and_pickup_dumbbell(col)
+            elif obj == "kettlebell":
+                self.approach_and_pickup_kettlebell(col)
+            else:
+                print(f"Unknown object: {obj}")
+                raise Exception("Unknown object")
+
     def approach_and_pickup_dumbbell(self, col="red"):
         """Approaches and picks up dumbbell of given color"""
         print(f"Approaching {col} dumbbell")
@@ -508,7 +528,6 @@ class RobotMovement(object):
         # show the debugging window
         cv2.imshow("window", image)
         cv2.waitKey(3)
-
     def approach_and_pickup_kettlebell(self, col="red"):
         """Approaches and picks up kettlebell of given color"""
         # color options
@@ -559,136 +578,104 @@ class RobotMovement(object):
         # show the debugging window
         cv2.imshow("window", image)
         cv2.waitKey(3)
-
-    def get_dist_from_node(self, dest):
-        """Gets current distance from node"""
-        p1 = (self.locations[dest][0], self.locations[dest][1])
-        p2 = (self.curr_pose.position.x, self.curr_pose.position.y)
-        return get_dist(p1, p2)
-
-    def move_to_node(self, dest):
-        print(f"Moving to node {dest}")
-        r = rospy.Rate(3)
-        self.oriented = False
-        while not self.oriented:
-            self.orient(dest)
-            r.sleep()
-        print("Finished orienting, now driving.")
+    def drop_off_object(self, dest):
+        while self.get_dist_from_node(dest) > 0.3:
+            self.twist.linear.x = 0.1
+            self.cmd_vel_pub.publish(self.twist)
+            print(f"Currently {self.get_dist_from_node(dest)} from drop off.")
         self.stop()
-        self.object_action_router(dest)
-        # self.finished_obj_action = False
-        # print("Now engaging in pick up")
-        # while not self.finished_obj_action:
-        #     #TODO: route appropriate color/object using a function
-        #     # self.approach_and_pickup_dumbbell("blue")
-        #     self.approach_and_pickup_kettlebell("blue")
-        # print("Should have dumbbell")
-        return
+        self.let_go()
+        print("Finished object drop off")
 
-    # STATE UPDATE FUNCS
-    def update_distance(self, data):
-        self.distance = data.ranges[0]
 
-    def update_image(self, msg):
-        self.image_data = msg
+    def run_sequence(self, sequence):
+        """sequence represents a single group of actions.
+        For example [[4,1], [1,4,5,6]]"""
 
-    
-
-    def object_action_router(self, dest):
-        """Decides what action each object"""
-        obj, col = self.curr_obj, self.curr_obj_col
-        print("Now deciding action to perform")
-
-        if not self.pick_up_now:
-            return
-
-        dist_from_node = float("inf")
-        if obj == None:
-            while dist_from_node > 0.4:
-                self.follow_yellow_line()
-                dist_from_node = self.get_dist_from_node(dest)
-                print(f"Currently {dist_from_node} from node.")
-            if self.drop_off:
-                self.drop_off_object()
-            return
-        elif obj == "dumbbell" or obj == "kettlebell":
-            print("Opening grip")
-            self.open_grip()                                      
-            self.lower_arm()
-            while dist_from_node > 1:
-                self.follow_yellow_line()
-                dist_from_node = self.get_dist_from_node(dest)
-                print(f"Currently {dist_from_node} from node.")
-        elif obj == "obstacle":
-            while dist_from_node > .5:
-                self.follow_yellow_line()
-                dist_from_node = self.get_dist_from_node(dest)
-                print(f"Currently {dist_from_node} from node.")
-        print("Now routing")
-        self.finished_obj_action = False
-        while not self.finished_obj_action:
-            if obj == "dumbbell":
-                self.approach_and_pickup_dumbbell(col)
-            elif obj == "kettlebell":
-                self.approach_and_pickup_kettlebell(col)
-            elif obj == "obstacle":
-                self.go_around()
+        def set_obj_at_node(dest):
+            """Side effect: sets object and object color props"""
+            for obj,col,node in self.action_sequence:
+                if node == dest:
+                    self.curr_obj = obj
+                    self.curr_obj_col = col
+                    break
+                elif node in [3,5]:
+                    self.curr_obj = "obstacle"
+                    self.curr_obj_col = None
+                    break
             else:
-                raise Exception(f"Unknown object: {obj}")
-            
+                self.curr_obj = None
+                self.curr_obj_col = None
 
+
+        for seq in sequence:
+            for dest in seq:
+                # ignore first node in sequence; it represents the
+                # node that robot is currently sitting on
+                if dest == seq[0]: continue
+                # last node in last sequence represents drop-off
+                if dest == seq[-1] and seq == sequence[-1]: self.drop_off = True
+                else: self.drop_off = False
+                # execute!
+                set_obj_at_node(dest)
+                self.move_to_node(dest)
+
+        
 
     def run(self):
-        '''
-        for seq in self.node_sequence:
-            prePickup = seq[0]
-            postPickup = seq[1]
-            for n in prePickup[:-1]:
-                self.move_to_node(n)
-            self.pick_up_now = True
-            self.move_to_node(prePickup[-1])
-            self.pick_up_now = False
-            for m in postPickup[:-1]:
-                self.move_to_node(m)
-            self.drop_off = True
-            self.move_to_node([postPickup[-1]])
-    '''
+        while True:
+            for sequence in self.node_sequence:
+                self.run_sequence(sequence)
+    #     '''
+    #     for seq in self.node_sequence:
+    #         prePickup = seq[0]
+    #         postPickup = seq[1]
+    #         for n in prePickup[:-1]:
+    #             self.move_to_node(n)
+    #         self.pick_up_now = True
+    #         self.move_to_node(prePickup[-1])
+    #         self.pick_up_now = False
+    #         for m in postPickup[:-1]:
+    #             self.move_to_node(m)
+    #         self.drop_off = True
+    #         self.move_to_node([postPickup[-1]])
+    # '''
 
-        while True:
-            # self.curr_obj = "kettlebell"
-            # self.move_to_node(7)
-            # self.approach_and_pickup_kettlebell("red")
-            self.curr_obj = None
-            self.move_to_node(1)
-            self.curr_obj = "kettlebell"
-            self.move_to_node(7)
-            self.curr_obj = None
-            self.move_to_node(1)
-            self.move_to_node(4)
-            print("Now going to obstacle")
-            self.curr_obj = "obstacle"
-            self.move_to_node(5)
-            self.curr_obj = None
-            self.drop_off = True
-            print("Now dropping off")
-            self.move_to_node(6)
-        # self.oriented = False
-        # self.move_to_node(1)
-        # self.move_to_node(7)
-        # print(self.action_sequence)
+    #     while True:
+    #         # self.move_forward(10)
+    #         # self.curr_obj = None
+    #         self.curr_obj = "dumbbell"
+    #         self.curr_obj_col = "blue"
+    #         self.move_to_node(2)
+    #         # self.curr_obj = "kettlebell"
+    #         # self.move_to_node(7)
+    #         # self.curr_obj = None
+    #         # self.move_to_node(1)
+    #         # self.move_to_node(4)
+    #         # print("Now going to obstacle")
+    #         # self.curr_obj = "obstacle"
+    #         # self.move_to_node(5)
+    #         # self.curr_obj = None
+    #         # self.drop_off = True
+    #         # print("Now dropping off")
+    #         # self.move_to_node(6)
+    #     # self.oriented = False
+    #     # self.move_to_node(1)
+    #     # self.move_to_node(7)
+    #     # print(self.action_sequence)
         
-        '''
-        while True:
-            # self.open_grip()
-            self.open_grip()
-            while True:
-                self.pick_up()
-                time.sleep(3)
-                self.let_go()
-            # self.move_fwd()
-        '''
+    #     '''
+    #     while True:
+    #         # self.open_grip()
+    #         self.open_grip()
+    #         while True:
+    #             self.pick_up()
+    #             time.sleep(3)
+    #             self.let_go()
+    #         # self.move_fwd()
+    #     '''
 
 if __name__ == "__main__":
     node = RobotMovement()
     node.run()
-
+ 
