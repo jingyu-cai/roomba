@@ -448,14 +448,14 @@ class RobotMovement(object):
         
         # Different criteria depending on what's on the node.
         if self.drop_off:
-            criteria = 0.9
+            criteria = 0.4
         elif obj == None:
             print("Moving to node.")
             # criteria = 0.42
             criteria = 0.5
-        elif obj == "obstacle":
-            print("Moving to node with obstacle")
-            criteria = 0.5
+        # elif obj == "obstacle":
+            # print("Moving to node with obstacle")
+            # criteria = 0.5
         elif obj == "dumbbell" or obj == "kettlebell":
             print("Moving to node with object to grab")
             criteria = .9
@@ -468,12 +468,14 @@ class RobotMovement(object):
             self.follow_yellow_line()
 
         if self.drop_off:
-            self.drop_off_object(dest)
+            self.drop_off_object()
             return
-        print(self.distance)
+        
+        # Robot needs to circle around the object if it's not being picked up
         if (not self.going_to_pick_up) and (self.distance < 0.5):
             self.go_around()
             return
+
         if obj == None: return
 
         self.finished_obj_action = False
@@ -588,14 +590,59 @@ class RobotMovement(object):
         # show the debugging window
         cv2.imshow("window", image)
         cv2.waitKey(3)
-    def drop_off_object(self, dest):
-        while self.get_dist_from_node(dest) > 0.3:
-            self.twist.linear.x = 0.1
-            self.cmd_vel_pub.publish(self.twist)
-            print(f"Currently {self.get_dist_from_node(dest)} from drop off.")
-        self.stop()
-        self.let_go()
-        print("Finished object drop off")
+    def drop_off_object(self):
+        col = self.curr_obj_col
+        # color options
+        red = {"lower":np.array([0,190,160]),"upper":np.array([2,255,255])}
+        green = {"lower":np.array([60,60,60]),"upper":np.array([65,255,250])}
+        blue = {"lower":np.array([94,80,2]),"upper":np.array([126,255,255])}
+        select = {"red": red, "green": green, "blue": blue}
+        
+        dropped = False
+        while not dropped:
+            image = self.bridge.imgmsg_to_cv2(self.image_data,desired_encoding='bgr8')
+            # boilerplate vars
+            h, w, d = image.shape
+            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            mask = cv2.inRange(hsv, select[col]["lower"], select[col]["upper"])
+            M = cv2.moments(mask)
+            if M['m00'] > 0:
+                # determine the center of the colored pixels in the image
+                cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+                cv2.circle(image, (cx, cy), 20, (255,255,255), -1)
+
+                # print("Colored pixels were found in the image.")
+                print(f"Distance: {self.distance}, cy: {cy}")
+
+                # drop off dumbbell when close enough
+                dumbbell_close_enough = cy > 410
+
+                if dumbbell_close_enough: 
+                    print("Close to dropoff! Now dropping.")
+                    self.twist.linear.x = 0
+                    self.twist.angular.z = 0
+                    self.cmd_vel_pub.publish(self.twist)
+                    self.let_go()
+                    self.finished_obj_action = True
+                    return
+                else:
+                    print("Out of range of dropoff. Moving forward.")
+                    # pid control variables!
+                    k_p, err = .01, w/2 - cx
+                    # alter trajectory accordingly
+                    self.twist.linear.x = 0.15
+                    self.twist.angular.z = k_p * err *.08
+                    self.cmd_vel_pub.publish(self.twist)
+            else:
+                print("No colored pixels -- spinning in place.")
+                self.twist.linear.x = 0
+                self.twist.angular.z = .1
+                self.cmd_vel_pub.publish(self.twist)
+            # show the debugging window
+            cv2.imshow("window", image)
+            cv2.waitKey(3)
+            # self.let_go()
+            print("dropped off")
 
 
     def run_sequence(self, sequence):
@@ -618,7 +665,7 @@ class RobotMovement(object):
                 '''
             else:
                 self.curr_obj = None
-                self.curr_obj_col = None
+                # self.curr_obj_col = None
 
 
         for seq in sequence:
