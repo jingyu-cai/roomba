@@ -124,4 +124,4 @@ If we had more time, it would be fun if we could expand the map and add more col
 
 ### Takeaways
 - The first takeaway is that for a big project like this with many individual components that require a lot of integration, it is very important to get everyone on the same page. This can be done with clear code comments, updating each other with what they are doing/have done, and periodic meetings to summarize the progress and make plans for next steps. By doing so, it can save a lot of time and energy wasted on potential misunderstandings and improve the overall efficiency of the group dramatically.
-- TODO: A few more bullet points
+- The second takeaway is that Q-learning and RL in general can be used to generate really interesting and complex behaviors based on how we define actions, states, and rewards. However, to realize those behaviors, it requires a lot of fine tuning of the actual execution of the robot, which works in a less controlled environment than what the algorithms assume. So again, this highlights the tight integration between the major components of our project, which we put a lot of thought and effort into.
