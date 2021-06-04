@@ -23,7 +23,7 @@ We think that this kind of robot would be helpful in the real world - picking an
 
 ### What were you able to make the robot do?
 
-We were able to get the roomba to clean up two pieces of red trash (dumbbell and kettlebell) and two pieces of blue trash (dumbbell and kettlebell). This was achieved using a number of techniques we learned in class as well as several concepts we taught ourselves along the way. To generate the path of the robot we used Q-Learning and the Floyd Washall algorithm. To move from point to point, we use line following and PID control. To pick up the objects, we used computer vision and PID control dependent on HSV color-scales. Here is a demonstration of our robot performing its task!
+We were able to get the roomba to clean up two pieces of red trash (dumbbell and ball/kettlebell) and two pieces of blue trash (dumbbell and ball/kettlebell). This was achieved using a number of techniques we learned in class as well as several concepts we taught ourselves along the way. To generate the path of the robot we used Q-Learning and the Floyd Washall algorithm. To move from point to point, we use line following and PID control. To pick up the objects, we used computer vision and PID control dependent on HSV color-scales. Here is a demonstration of our robot performing its task!
 
 ![gif][demo]
 
