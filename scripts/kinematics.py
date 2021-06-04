@@ -142,7 +142,6 @@ class RobotMovement(object):
         # Set up pose and orientation variables
         self.curr_pose = Pose()
         self.oriented = False
-        self.pick_up_now = False
 
         # Set up kp for proportional control
         self.kp = 0.2
@@ -449,8 +448,6 @@ class RobotMovement(object):
         obj, col = self.curr_obj, self.curr_obj_col
         print("Now deciding action to perform")
 
-        # if not self.pick_up_now: return
-
         dist_from_node = lambda: self.get_dist_from_node(dest)
         
         # Different criteria depending on what's on the node.
@@ -470,6 +467,7 @@ class RobotMovement(object):
             print(f"Currently {dist_from_node()} from node.")
             self.follow_yellow_line()
 
+        # Drop off object if robot status says so
         if self.drop_off:
             self.drop_off_object()
             return
@@ -645,7 +643,6 @@ class RobotMovement(object):
             # self.let_go()
             print("dropped off")
 
-
     def run_sequence(self, sequence):
         """sequence represents a single group of actions.
         For example [[4,1], [1,4,5,6]]"""
@@ -666,7 +663,6 @@ class RobotMovement(object):
             else:
                 self.curr_obj = None
                 # self.curr_obj_col = None
-
 
         for seq in sequence:
             for dest in seq:
