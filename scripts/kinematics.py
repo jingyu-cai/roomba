@@ -164,6 +164,7 @@ class RobotMovement(object):
         self.holding_object = False
         self.drop_off = False
         self.going_to_pick_up = False
+        self.score = 0 # debug counter
 
         # set up action sequence
         self.action_sequence = []
@@ -343,6 +344,7 @@ class RobotMovement(object):
         self.open_grip()
         self.move_back()
         self.holding_object = False
+        self.score += 1
     def go_around(self):
         """Takes robot around an object"""
         print("Starting go_around")
@@ -441,6 +443,7 @@ class RobotMovement(object):
 
         print("Finished orienting, now driving.")
         self.stop()
+        time.sleep(1)
         self.object_action_router(dest)
         return
 
@@ -488,10 +491,10 @@ class RobotMovement(object):
 
         self.finished_obj_action = False
         while not self.finished_obj_action:
-            if obj == "dumbbell":
-                self.approach_and_pickup_dumbbell(col)
-            elif obj == "kettlebell":
+            if obj == "kettlebell" or self.score >= 2:
                 self.approach_and_pickup_kettlebell(col)
+            elif obj == "dumbbell":
+                self.approach_and_pickup_dumbbell(col)
             else:
                 print(f"Unknown object: {obj}")
                 # raise Exception("Unknown object")
