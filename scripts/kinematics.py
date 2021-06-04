@@ -164,6 +164,7 @@ class RobotMovement(object):
         self.holding_object = False
         self.drop_off = False
         self.going_to_pick_up = False
+        self.score = 0 # debug counter
 
         # set up action sequence
         self.action_sequence = []
@@ -343,6 +344,7 @@ class RobotMovement(object):
         self.open_grip()
         self.move_back()
         self.holding_object = False
+        self.score += 1
     def go_around(self):
         """Takes robot around an object"""
         print("Starting go_around")
@@ -373,10 +375,6 @@ class RobotMovement(object):
         point = self.locations[p]
         target_angle = get_target_angle(self.curr_pose.position, (point[0], point[1]))
         diff = target_angle - get_yaw_from_pose(self.curr_pose)
-
-        # For testing: print target angle and the angle difference
-        #print("target ang", target_angle)
-        #print("diff", diff)
 
         # Set linear velocity to 0 since we only care about angular orientation
         self.twist.linear.x = 0
@@ -460,11 +458,7 @@ class RobotMovement(object):
             criteria = 0.4
         elif obj == None:
             print("Moving to node.")
-            # criteria = 0.42
             criteria = 0.5
-        # elif obj == "obstacle":
-            # print("Moving to node with obstacle")
-            # criteria = 0.5
         elif obj == "dumbbell" or obj == "kettlebell":
             print("Moving to node with object to grab")
             criteria = .9
@@ -489,7 +483,7 @@ class RobotMovement(object):
 
         self.finished_obj_action = False
         while not self.finished_obj_action:
-            if obj == "kettlebell":
+            if obj == "kettlebell" or self.score >= 2:
                 self.approach_and_pickup_kettlebell(col)
             elif obj == "dumbbell":
                 self.approach_and_pickup_dumbbell(col)
@@ -669,12 +663,6 @@ class RobotMovement(object):
                     self.curr_obj_col = col
                     self.going_to_pick_up = True
                     break
-                '''
-                elif node in [3,5]:
-                    self.curr_obj = "obstacle"
-                    self.curr_obj_col = None
-                    break
-                '''
             else:
                 self.curr_obj = None
                 # self.curr_obj_col = None
@@ -694,8 +682,6 @@ class RobotMovement(object):
                 print("Current obj:", self.curr_obj)
                 self.move_to_node(dest)
 
-        
-
     def run(self):
         while True:
             for sequence in self.node_sequence:
@@ -704,4 +690,3 @@ class RobotMovement(object):
 if __name__ == "__main__":
     node = RobotMovement()
     node.run()
- 
