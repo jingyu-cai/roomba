@@ -164,7 +164,6 @@ class RobotMovement(object):
         self.holding_object = False
         self.drop_off = False
         self.going_to_pick_up = False
-        self.score = 0 # debug counter
 
         # set up action sequence
         self.action_sequence = []
@@ -344,7 +343,6 @@ class RobotMovement(object):
         self.open_grip()
         self.move_back()
         self.holding_object = False
-        self.score += 1
     def go_around(self):
         """Takes robot around an object"""
         print("Starting go_around")
@@ -464,8 +462,6 @@ class RobotMovement(object):
             print("Moving to node.")
             # criteria = 0.42
             criteria = 0.5
-            if self.score == 3:
-                criteria = 0.6
         # elif obj == "obstacle":
             # print("Moving to node with obstacle")
             # criteria = 0.5
@@ -488,15 +484,12 @@ class RobotMovement(object):
         if (not self.going_to_pick_up) and (self.distance < 0.5):
             self.go_around()
             return
-        if self.score == 3 and (not self.going_to_pick_up) and (self.distance < 0.6):
-            self.go_around()
-            return
 
         if obj == None: return
 
         self.finished_obj_action = False
         while not self.finished_obj_action:
-            if obj == "kettlebell" or self.score >= 2:
+            if obj == "kettlebell":
                 self.approach_and_pickup_kettlebell(col)
             elif obj == "dumbbell":
                 self.approach_and_pickup_dumbbell(col)
