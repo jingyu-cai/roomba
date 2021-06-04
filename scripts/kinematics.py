@@ -161,6 +161,7 @@ class RobotMovement(object):
         self.curr_obj_col = None
 
         # status of robot
+        self.holding_object = False
         self.drop_off = False
         self.going_to_pick_up = False
 
@@ -269,6 +270,10 @@ class RobotMovement(object):
         if not self.going_to_pick_up:
             return
 
+        if self.holding_object:
+            self.curr_obj = None
+            return
+
         self.curr_obj = data.object
         print(f"The object is {data.object}.")
 
@@ -327,6 +332,8 @@ class RobotMovement(object):
         self.close_grip()
         self.upper_arm()
         self.angle_arm()
+        self.holding_object = True
+        self.going_to_pick_up = False
     def let_go(self):
         """ Loosens grip and backs away from dumbbell.
         """
@@ -335,6 +342,7 @@ class RobotMovement(object):
         self.lower_arm()
         self.open_grip()
         self.move_back()
+        self.holding_object = False
     def go_around(self):
         """Takes robot around an object"""
         print("Starting go_around")
@@ -521,7 +529,6 @@ class RobotMovement(object):
                 self.cmd_vel_pub.publish(self.twist)
                 self.pick_up()
                 self.finished_obj_action = True
-                self.going_to_pick_up = False
                 return
             else:
                 print("Out of range of dumbbells. Moving forward.")
@@ -572,7 +579,6 @@ class RobotMovement(object):
                 self.cmd_vel_pub.publish(self.twist)
                 self.pick_up()
                 self.finished_obj_action = True
-                self.going_to_pick_up = False
                 return
             else:
                 print("Out of range of kettles. Moving forward.")
@@ -651,6 +657,11 @@ class RobotMovement(object):
 
         def set_obj_at_node(dest):
             """Side effect: sets object and object color props"""
+
+            if self.holding_object:
+                self.curr_obj = None
+                return
+
             for obj,col,node in self.action_sequence:
                 if node == dest:
                     # self.curr_obj = obj
@@ -678,8 +689,8 @@ class RobotMovement(object):
                 else: self.drop_off = False
                 # execute!
                 set_obj_at_node(dest)
-                print(self.going_to_pick_up)
-                print(self.curr_obj)
+                print("Going to pick up:", self.going_to_pick_up)
+                print("Current obj:", self.curr_obj)
                 self.move_to_node(dest)
 
         
