@@ -464,6 +464,8 @@ class RobotMovement(object):
             print("Moving to node.")
             # criteria = 0.42
             criteria = 0.5
+            if self.score == 3:
+                criteria = 0.6
         # elif obj == "obstacle":
             # print("Moving to node with obstacle")
             # criteria = 0.5
