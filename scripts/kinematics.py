@@ -700,54 +700,6 @@ class RobotMovement(object):
         while True:
             for sequence in self.node_sequence:
                 self.run_sequence(sequence)
-    #     '''
-    #     for seq in self.node_sequence:
-    #         prePickup = seq[0]
-    #         postPickup = seq[1]
-    #         for n in prePickup[:-1]:
-    #             self.move_to_node(n)
-    #         self.pick_up_now = True
-    #         self.move_to_node(prePickup[-1])
-    #         self.pick_up_now = False
-    #         for m in postPickup[:-1]:
-    #             self.move_to_node(m)
-    #         self.drop_off = True
-    #         self.move_to_node([postPickup[-1]])
-    # '''
-
-    #     while True:
-    #         # self.move_forward(10)
-    #         # self.curr_obj = None
-    #         self.curr_obj = "dumbbell"
-    #         self.curr_obj_col = "blue"
-    #         self.move_to_node(2)
-    #         # self.curr_obj = "kettlebell"
-    #         # self.move_to_node(7)
-    #         # self.curr_obj = None
-    #         # self.move_to_node(1)
-    #         # self.move_to_node(4)
-    #         # print("Now going to obstacle")
-    #         # self.curr_obj = "obstacle"
-    #         # self.move_to_node(5)
-    #         # self.curr_obj = None
-    #         # self.drop_off = True
-    #         # print("Now dropping off")
-    #         # self.move_to_node(6)
-    #     # self.oriented = False
-    #     # self.move_to_node(1)
-    #     # self.move_to_node(7)
-    #     # print(self.action_sequence)
-        
-    #     '''
-    #     while True:
-    #         # self.open_grip()
-    #         self.open_grip()
-    #         while True:
-    #             self.pick_up()
-    #             time.sleep(3)
-    #             self.let_go()
-    #         # self.move_fwd()
-    #     '''
 
 if __name__ == "__main__":
     node = RobotMovement()
