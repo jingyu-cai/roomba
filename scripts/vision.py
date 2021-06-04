@@ -114,7 +114,7 @@ class Detector:
 
             #approximate the shape by polygon
             approx = cv2.approxPolyDP(
-                contour, 0.0001 * cv2.arcLength(contour, True), True)
+                contour, 0.0000001 * (cv2.arcLength(contour, True) ** 2), True)
 
             
             #print(len(approx))
@@ -151,7 +151,8 @@ class Detector:
         num_vertices = len(closest_shape['approx'])
 
         #publish what is detected
-        if num_vertices < 170:
+        print(num_vertices)
+        if num_vertices < 155:
             print('dumbbell')
             detected_object = DetectedObject()
             detected_object.object = 'dumbbell'
