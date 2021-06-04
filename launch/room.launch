@@ -38,4 +38,8 @@
   <!-- Run a transformation between the robot and its laser -->
   <node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="0.0 0.0 0.1016 0 0 0 /base_footprint /camera_rgb_optical_frame 100" />
 
+  <!-- Run the kinematics and vision python files -->
+  <node name="vision" pkg="roomba" type="vision.py" />
+  <node name="kinematics" pkg="roomba" type="kinematics.py" output="screen" />
+
 </launch>
