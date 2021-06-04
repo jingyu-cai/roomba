@@ -488,6 +488,9 @@ class RobotMovement(object):
         if (not self.going_to_pick_up) and (self.distance < 0.5):
             self.go_around()
             return
+        if self.score == 3 and (not self.going_to_pick_up) and (self.distance < 0.6):
+            self.go_around()
+            return
 
         if obj == None: return
 
