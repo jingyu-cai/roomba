@@ -135,7 +135,7 @@ The code for kinematics is located in `kinematics.py`:
 - Granular movements for arm motion such as `lower_arm`, `upper_arm`, and `angle_arm` were responsible for the ready position, the raised position, and the raised-angled position (so the dumbbell would be out of the way of the camera).
 - The above granular movements were then combined to create complex operations such as `pick_up`, `let_go`, `go_around`. These each performed the compound movements required to pick up and let go of objects, go around obstacles, and drop off the object.
 - The `move_to_node` is further a layer of abstraction above these, as it uses the `object_action_router` to determine which of the above object control functions to use. The `follow_yellow_line` function is used throughout to move from node to node. Aside from these functions, the `move_to_node` also integrates the `orient` function to be in the correct angle to move towards the next node.
-- Note that sometimes the robot may not successfully pick up a dumbbell or a kettlebell, and this may subsequently generate unwanted behaviors. We tried our best to fine tune these pick-up actions, but due to random noise in Gazebo, they don’t work everytime.
+- Note that sometimes the robot may not successfully pick up a dumbbell or a kettlebell, and this may subsequently generate unwanted behaviors. We tried our best to fine tune these pick-up actions, but due to random noise in Gazebo, they don’t work perfectly everytime.
 
 ## Challenges, Future Work, and Takeaways
 
